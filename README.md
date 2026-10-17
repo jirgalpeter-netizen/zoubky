@@ -1,5 +1,7 @@
 # Zoubky – hra pro děti 3–4 roky (Android)
 
+**Stažení do mobilu:** https://github.com/jirgalpeter-netizen/zoubky/releases/latest/download/Zoubky-1.1.apk (veřejné, bez přihlášení)
+
 Naučná hra: dítě prstem čistí zoubky bobrovi Bobíkovi, medvídkovi Míšovi a kočičce Micce.
 Bez čtení – vše řídí český hlas (Android TextToSpeech), obrázky a ukazující ručička.
 
