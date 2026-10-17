@@ -45,6 +45,7 @@ summary{font-weight:700;cursor:pointer}
 .stores span{border:2px dashed var(--line);border-radius:14px;padding:8px 14px;color:var(--muted);font-weight:700}
 footer{text-align:center;color:var(--muted);font-size:14px;margin-top:40px}
 footer a{color:inherit}
+.btn.play{background:linear-gradient(180deg,#2b2f36,#111418);box-shadow:0 6px 0 #000;font-size:19px;min-height:54px;padding:12px 26px;margin-top:12px}
 .hide{display:none!important}
 </style>
 </head>
@@ -85,7 +86,8 @@ footer a{color:inherit}
       <p class="note">Na telefonu naskenuj kód a hru si nainstaluj:</p>
       <img class="qr" src="qr.svg" alt="QR kód odkazu na tuto stránku">
     </div>
-    <div class="stores"><span>Google Play – připravujeme</span><span>App Store – připravujeme</span></div>
+    <a class="btn play hide" id="play" href="#">▶️ Z Google Play</a>
+    <div class="stores"><span id="playSoon">Google Play – připravujeme</span><span>App Store – připravujeme</span></div>
   </div>
 
   <h2>Jak to vypadá</h2>
@@ -123,6 +125,10 @@ footer a{color:inherit}
   var ua=navigator.userAgent, ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1), android=/Android/.test(ua);
   var standalone=window.navigator.standalone||matchMedia('(display-mode: standalone)').matches;
   var $=function(id){return document.getElementById(id)}, deferred=null;
+  // Odkaz na Google Play: po založení aplikace sem přijde odkaz na test (play.google.com/apps/internaltest/…),
+  // po zveřejnění https://play.google.com/store/apps/details?id=cz.petr.zoubky. Prázdný = „připravujeme“.
+  var PLAY='';
+  if(PLAY){$('play').href=PLAY;$('play').classList.remove('hide');$('playSoon').classList.add('hide')}
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
   function show(id){['a-prompt','a-done','i-steps','a-manual','d-play'].forEach(function(x){$(x).classList.toggle('hide',x!==id)})}
   if(standalone){location.replace('hra/');return}
