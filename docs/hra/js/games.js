@@ -194,14 +194,14 @@ Scenes.game = {
     if (firstTimes('mini_' + this.arg.kind, 2)) setTimeout(() => say(P[this.arg.kind]), 500);
   },
   finish() { if (this.done) return; this.done = true; this.doneT = 0; Snd.fanfare(); buzz(60); confetti(70); },
-  leave() { go('map', this.arg.resume ? { resume: this.arg.resume } : null); },
+  leave() { if (this.arg.menu) go('minis'); else go('map', this.arg.resume ? { resume: this.arg.resume } : null); },
   toReward() {
     this.phase = 'reward';
     const first = this.arg.key ? !Save.stations[this.arg.key] : false;
     if (this.arg.key) { Save.stations[this.arg.key] = true; Save.save(); }
     const got = first ? giveReward(null, [null]) : (Save.rewards++, Save.save(), []);
     Reward.start(got, [
-      { x: 1400, y: 300, r: 92, color: '#4cd964', icon: 'map', delay: 0, pulse: true, fn: () => this.leave() },
+      { x: 1400, y: 300, r: 92, color: '#4cd964', icon: this.arg.menu ? 'games' : 'map', delay: 0, pulse: true, fn: () => this.leave() },
       { x: 1400, y: 540, r: 62, color: '#ff9f1a', icon: 'again', delay: 0.15, fn: () => go('game', this.arg) }
     ], first ? 0.2 : 0.4);
   },
@@ -216,7 +216,7 @@ Scenes.game = {
     if (this.phase === 'reward') { Reward.draw(); return; }
     this.g.draw(this);
     if (!this.done && T - this.lastAct > IDLE_HINT - 4) { const h = this.g.hint(); if (h) drawHand(h.x, h.y, T, 1); }
-    drawBtn({ x: 70, y: 70, r: 44, color: '#3fa9f5', icon: 'map' });
+    drawBtn({ x: 70, y: 70, r: 44, color: '#3fa9f5', icon: this.arg.menu ? 'games' : 'map' });
   },
   down(x, y) {
     if (this.phase === 'reward') { Reward.down(x, y); return; }
@@ -225,4 +225,26 @@ Scenes.game = {
   },
   move(x, y) { if (this.phase === 'play' && !this.done && this.g.move) this.g.move(x, y, this); },
   up(x, y) { if (this.g.up) this.g.up(x, y, this); }
+};
+
+// ===== MINIHRY: rozcestník, kdykoli se k nim dá vrátit =====
+const MINI_LIST = [{ kind: 'paint', color: '#ff9f1a' }, { kind: 'ears', color: '#ff8fc7' }, { kind: 'bubbles', color: '#5fd0ff' }];
+Scenes.minis = {
+  enter() { Music.on = true; if (firstTimes('minis', 2)) say(P.minis); },
+  pos(i) { return { x: 400 + i * 400, y: 380 }; },
+  update() {},
+  draw() {
+    bgBath('#fff3c4');
+    drawToothChar(800, 120, 60, T);
+    MINI_LIST.forEach((m, i) => { const p = this.pos(i), k = 1 + Math.sin(T * 2 + i) * 0.04;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(k, k);
+      ctx.shadowColor = 'rgba(0,0,0,.2)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
+      ctx.fillStyle = m.color; ctx.beginPath(); ctx.arc(0, 0, 150, 0, 7); ctx.fill(); ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 12; ctx.strokeStyle = '#fff'; ctx.stroke(); drawGameIcon(m.kind, 0, 0, 95); ctx.restore(); });
+    drawBtn({ x: 70, y: 70, r: 44, color: '#3fa9f5', icon: 'map' });
+  },
+  down(x, y) {
+    if (dist(x, y, 70, 70) < 70) { Snd.tap(); go('map'); return; }
+    MINI_LIST.forEach((m, i) => { const p = this.pos(i); if (dist(x, y, p.x, p.y) < 160) { Snd.tap(); Snd.sparkle(); go('game', { kind: m.kind, menu: true }); } });
+  }
 };

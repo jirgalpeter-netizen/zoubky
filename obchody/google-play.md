@@ -1,6 +1,6 @@
 # Zoubky – Google Play (podklady k vyplnění)
 
-Balíček: `cz.petr.zoubky` · soubor k nahrání: **Zoubky.aab** (verze 3.2, kód 6, cíl Android 16) · podpisový (upload) klíč je na VPS v `/root/.android-keys/zoubky.jks` – nemazat, každá další verze se musí podepsat stejným.
+Balíček: `cz.petr.zoubky` · soubor k nahrání: **Zoubky.aab** (verze 3.3, kód 7, cíl Android 16) · podpisový (upload) klíč je na VPS v `/root/.android-keys/zoubky.jks` – nemazat, každá další verze se musí podepsat stejným.
 
 ## Postup
 1. Účet vývojáře: https://play.google.com/console/signup – **osobní účet**, poplatek 25 USD jednorázově, ověření totožnosti (občanka) trvá obvykle 1–3 dny.

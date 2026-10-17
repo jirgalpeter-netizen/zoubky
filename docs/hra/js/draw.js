@@ -65,8 +65,15 @@ const FOOD = {
   apple: { good: true, yes: 'Ano! Jablíčko je pro zoubky zdravé. Mňam!' },
   carrot: { good: true, yes: 'Ano! Mrkvička je pro zoubky zdravá. Mňam!' },
   cheese: { good: true, yes: 'Ano! Sýr je pro zoubky zdravý. Mňam!' },
-  lolly: { good: false }, choco: { good: false }, soda: { good: false }, cake: { good: false }
+  cucumber: { good: true, yes: 'Ano! Okurka je pro zoubky zdravá.' },
+  milk: { good: true, yes: 'Ano! Mlíčko dělá zoubky silné.' },
+  broccoli: { good: true, yes: 'Ano! Brokolice je zdravá.' },
+  pear: { good: true, yes: 'Ano! Hruška je zdravá. Mňam!' },
+  yogurt: { good: true, yes: 'Ano! Bílý jogurt je pro zoubky dobrý.' },
+  lolly: { good: false }, choco: { good: false }, soda: { good: false }, cake: { good: false },
+  donut: { good: false }, gummy: { good: false }, icecream: { good: false }
 };
+const GOOD_FOOD = Object.keys(FOOD).filter(k => FOOD[k].good), BAD_FOOD = Object.keys(FOOD).filter(k => !FOOD[k].good);
 function drawFood(id, x, y, s, rot) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
   if (id === 'apple') {
@@ -103,6 +110,40 @@ function drawFood(id, x, y, s, rot) {
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, s * 0.1, s * 0.26, s * 0.34, 0, 0, 7); ctx.fill();
     ctx.fillStyle = '#ff4d6d'; starPath(0, s * 0.1, s * 0.18, s * 0.08, 5); ctx.fill();
     ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = s * 0.08; ctx.beginPath(); ctx.moveTo(s * 0.1, -s * 0.66); ctx.lineTo(s * 0.25, -s * 1.0); ctx.stroke();
+  } else if (id === 'cucumber') {
+    ctx.rotate(-0.5); ctx.fillStyle = '#3f9a3f'; rr(-s * 0.95, -s * 0.28, s * 1.9, s * 0.56, s * 0.28); ctx.fill();
+    ctx.fillStyle = '#6cc04c'; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(-s * 0.6 + i * s * 0.3, -s * 0.05 + (i % 2) * s * 0.12, s * 0.05, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#c8f0a0'; ctx.beginPath(); ctx.ellipse(s * 0.95, 0, s * 0.12, s * 0.27, 0, 0, 7); ctx.fill();
+  } else if (id === 'milk') {
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#9bb8cc'; ctx.lineWidth = s * 0.05;
+    ctx.beginPath(); ctx.moveTo(-s * 0.45, -s * 0.35); ctx.lineTo(0, -s * 0.75); ctx.lineTo(s * 0.45, -s * 0.35); ctx.lineTo(s * 0.45, s * 0.85); ctx.lineTo(-s * 0.45, s * 0.85); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3fa9f5'; ctx.fillRect(-s * 0.45, s * 0.05, s * 0.9, s * 0.4); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, s * 0.25, s * 0.22, s * 0.13, 0, 0, 7); ctx.fill();
+  } else if (id === 'broccoli') {
+    ctx.fillStyle = '#9bd36a'; rr(-s * 0.16, 0, s * 0.32, s * 0.85, s * 0.12); ctx.fill();
+    ctx.fillStyle = '#3f9a3f'; for (const [a, b, r] of [[-0.42, -0.2, 0.36], [0.42, -0.2, 0.36], [0, -0.45, 0.42], [-0.18, 0.05, 0.3], [0.2, 0.05, 0.3]]) { ctx.beginPath(); ctx.arc(a * s, b * s, r * s, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#4fae46'; for (const [a, b] of [[-0.3, -0.35], [0.15, -0.6], [0.4, -0.15]]) { ctx.beginPath(); ctx.arc(a * s, b * s, s * 0.1, 0, 7); ctx.fill(); }
+  } else if (id === 'pear') {
+    ctx.fillStyle = '#c9d94a'; ctx.beginPath(); ctx.arc(0, s * 0.3, s * 0.55, 0, 7); ctx.arc(0, -s * 0.25, s * 0.33, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(-s * 0.25, s * 0.15, s * 0.1, s * 0.22, -0.3, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#6b4220'; ctx.lineWidth = s * 0.08; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -s * 0.55); ctx.lineTo(s * 0.08, -s * 0.8); ctx.stroke();
+    ctx.fillStyle = '#4cbf3c'; ctx.beginPath(); ctx.ellipse(s * 0.25, -s * 0.72, s * 0.2, s * 0.1, -0.4, 0, 7); ctx.fill();
+  } else if (id === 'yogurt') {
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#9bb8cc'; ctx.lineWidth = s * 0.05;
+    ctx.beginPath(); ctx.moveTo(-s * 0.55, -s * 0.4); ctx.lineTo(s * 0.55, -s * 0.4); ctx.lineTo(s * 0.42, s * 0.75); ctx.lineTo(-s * 0.42, s * 0.75); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c8d3dc'; rr(-s * 0.62, -s * 0.55, s * 1.24, s * 0.18, s * 0.06); ctx.fill();
+    ctx.fillStyle = '#4cd964'; ctx.beginPath(); ctx.arc(0, s * 0.18, s * 0.22, 0, 7); ctx.fill();
+  } else if (id === 'donut') {
+    ctx.fillStyle = '#e0a96a'; ctx.beginPath(); ctx.arc(0, 0, s * 0.75, 0, 7); ctx.arc(0, 0, s * 0.24, 0, 7); ctx.fill('evenodd');
+    ctx.fillStyle = '#ff8fc7'; ctx.beginPath(); for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI * 2, r = s * (0.66 + 0.06 * Math.sin(i * 2.3)); i ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.arc(0, 0, s * 0.3, 0, 7); ctx.fill('evenodd');
+    for (let i = 0; i < 10; i++) { const a = i * 0.63; ctx.fillStyle = CONF[i % 6]; ctx.save(); ctx.translate(Math.cos(a) * s * 0.46, Math.sin(a) * s * 0.46); ctx.rotate(a * 2); ctx.fillRect(-s * 0.07, -s * 0.02, s * 0.14, s * 0.04); ctx.restore(); }
+  } else if (id === 'gummy') {
+    for (const [dx, c] of [[-0.35, '#ff4d6d'], [0.35, '#4cd964']]) { ctx.fillStyle = c; ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(dx * s, -s * 0.35, s * 0.25, 0, 7); ctx.arc(dx * s - s * 0.18, -s * 0.55, s * 0.1, 0, 7); ctx.arc(dx * s + s * 0.18, -s * 0.55, s * 0.1, 0, 7); ctx.ellipse(dx * s, s * 0.2, s * 0.3, s * 0.42, 0, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  } else if (id === 'icecream') {
+    ctx.fillStyle = '#e8b06a'; ctx.beginPath(); ctx.moveTo(-s * 0.4, 0); ctx.lineTo(s * 0.4, 0); ctx.lineTo(0, s * 0.95); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c98a4a'; ctx.lineWidth = s * 0.04; for (const k of [-0.2, 0.1]) { ctx.beginPath(); ctx.moveTo(k * s - s * 0.2, 0); ctx.lineTo(k * s + s * 0.25, s * 0.5); ctx.stroke(); }
+    ctx.fillStyle = '#ff8fc7'; ctx.beginPath(); ctx.arc(-s * 0.2, -s * 0.15, s * 0.32, 0, 7); ctx.fill(); ctx.fillStyle = '#fff3c4'; ctx.beginPath(); ctx.arc(s * 0.2, -s * 0.2, s * 0.32, 0, 7); ctx.fill();
+    ctx.fillStyle = '#6b3a1e'; ctx.beginPath(); ctx.arc(0, -s * 0.48, s * 0.3, 0, 7); ctx.fill(); ctx.fillStyle = '#e8332b'; ctx.beginPath(); ctx.arc(s * 0.05, -s * 0.8, s * 0.12, 0, 7); ctx.fill();
   } else if (id === 'cake') {
     ctx.fillStyle = '#f7d9a8'; ctx.beginPath(); ctx.moveTo(-s * 0.75, s * 0.5); ctx.lineTo(s * 0.75, s * 0.5); ctx.lineTo(s * 0.75, -s * 0.15); ctx.lineTo(-s * 0.75, s * 0.0); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#ff8fc7'; ctx.beginPath(); ctx.moveTo(-s * 0.8, 0); ctx.lineTo(s * 0.8, -s * 0.18); ctx.lineTo(s * 0.2, -s * 0.55); ctx.closePath(); ctx.fill();
@@ -244,6 +285,16 @@ function drawGerm(x, y, r, c, ph, sq, scared, angry) {
   ctx.restore();
 }
 
+// ultrabacil: zlatá zubatá záře, slábne s každým zásahem
+function drawUltraAura(x, y, r, hp) {
+  const k = clamp(hp / 7, 0.2, 1), R = r * (1.55 + Math.sin(T * 6) * 0.08);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(T * 1.5);
+  ctx.fillStyle = 'rgba(255,210,63,' + (0.45 * k) + ')'; ctx.beginPath();
+  for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2, q = i % 2 ? R : R * 0.78; i ? ctx.lineTo(Math.cos(a) * q, Math.sin(a) * q) : ctx.moveTo(Math.cos(a) * q, Math.sin(a) * q); }
+  ctx.closePath(); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#ff4d6d'; for (let i = 0; i < Math.ceil(hp / 2); i++) { heartPath(x - 22 + i * 15, y - r - 26, 6); ctx.fill(); }
+}
+
 // ===== Tlačítka =====
 function drawBtn(b) {
   const p = b.pulse ? 1 + Math.sin(T * 5) * 0.06 : 1, sc = b.sc == null ? 1 : b.sc;
@@ -292,6 +343,9 @@ function drawIcon(name, s, col) {
       ctx.fillRect(-s * 0.6, -s * 0.9, s * 1.2, s * 0.16); ctx.fillRect(-s * 0.6, s * 0.74, s * 1.2, s * 0.16);
       ctx.beginPath(); ctx.moveTo(-s * 0.45, -s * 0.74); ctx.lineTo(s * 0.45, -s * 0.74); ctx.lineTo(s * 0.08, 0); ctx.lineTo(s * 0.45, s * 0.74); ctx.lineTo(-s * 0.45, s * 0.74); ctx.lineTo(-s * 0.08, 0); ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.moveTo(-s * 0.3, s * 0.7); ctx.lineTo(s * 0.3, s * 0.7); ctx.lineTo(0, s * 0.3); ctx.closePath(); ctx.fill(); break;
+    case 'games': // tři barevné hrací kostičky
+      for (const [dx, dy, c] of [[-0.45, 0.3, '#ffd23f'], [0.45, 0.3, '#4cd964'], [0, -0.45, '#5fd0ff']]) { ctx.fillStyle = '#fff'; rr(dx * s - s * 0.38, dy * s - s * 0.38, s * 0.76, s * 0.76, s * 0.14); ctx.fill(); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(dx * s, dy * s, s * 0.14, 0, 7); ctx.fill(); }
+      break;
     case 'music':
       ctx.beginPath(); ctx.ellipse(-s * 0.35, s * 0.5, s * 0.3, s * 0.22, -0.3, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(s * 0.45, s * 0.35, s * 0.3, s * 0.22, -0.3, 0, 7); ctx.fill();
       ctx.lineWidth = s * 0.14; ctx.beginPath(); ctx.moveTo(-s * 0.08, s * 0.48); ctx.lineTo(-s * 0.08, -s * 0.6); ctx.lineTo(s * 0.72, -s * 0.78); ctx.lineTo(s * 0.72, s * 0.33); ctx.stroke();

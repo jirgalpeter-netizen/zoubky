@@ -175,6 +175,7 @@ Scenes.map = {
     this.greeted = true;
     this.btns = [
       { x: 110, y: 630, r: 70, color: '#ff9f1a', icon: 'book', fn: () => go('album') },
+      { x: 275, y: 645, r: 56, color: '#ff8fc7', icon: 'games', fn: () => go('minis') },
       { x: 1490, y: 630, r: 70, color: '#4cd964', icon: 'together', fn: () => go('together') },
       { x: 1535, y: 62, r: 40, color: '#b06cff', icon: 'music', fn: () => setMusic(!Save.music) },
       { x: 270, y: 64, r: 42, color: '#ffffff', icon: 'none', fn: () => go('profile') }
@@ -228,6 +229,7 @@ Scenes.map = {
       if (locked) { ctx.fillStyle = 'rgba(200,206,214,.75)'; ctx.fillRect(n.x - 80, n.y - 80, 160, 160); }
       ctx.restore();
       if (locked) drawLock(n.x, n.y + 6, 34);
+      ctx.fillStyle = locked ? '#aab2bc' : '#3fa9f5'; ctx.beginPath(); ctx.arc(n.x - 56, n.y - 52, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), n.x - 56, n.y - 50);
       if (done) { drawCrown(n.x, n.y - 62, 54); ctx.fillStyle = '#4cd964'; ctx.beginPath(); ctx.arc(n.x + 55, n.y + 50, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(n.x + 45, n.y + 50); ctx.lineTo(n.x + 53, n.y + 58); ctx.lineTo(n.x + 66, n.y + 42); ctx.stroke(); }
       ctx.restore();
     });

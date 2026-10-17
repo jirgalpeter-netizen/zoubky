@@ -69,6 +69,10 @@ const P = {
   togQ: ['Nahoře na jedné straně. Drhni, drhni!', 'Teď nahoře na druhé straně.', 'A teď dole na jedné straně.', 'Dole na druhé straně. Už jen kousek!'],
   togEnd: { f: 'Výborně! Vyčistila sis zoubky. Teď vypláchni pusu.', m: 'Výborně! Vyčistil sis zoubky. Teď vypláchni pusu.' },
   whoAreYou: 'Ahoj! Kdo jsi ty? Ťukni na sebe.',
+  ultra: 'Pozor, ultrabacil! Je silný, musíš ho drhnout dlouho!',
+  snackShoot: 'Padá jídlo! Sestřel ho kartáčkem, ať nespadne do pusy!',
+  wrongBrush: 'Ajaj, sladkost! Zoubky jsou zase špinavé. Ještě chvilku čistíme!',
+  minis: 'Na co máš chuť? Vyber si hru.',
   forkAsk: 'Kudy půjdeme? Vyber cestičku.',
   paint: 'Vyber barvičku a ťukni do obrázku.',
   ears: 'Vyčisti oušku. Jemně, ať to nebolí!',
@@ -91,18 +95,20 @@ function allPhrases() {
 }
 
 // ===== Obtížnost levelů =====
-const DUR = [25, 30, 35, 40, 45, 55, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 180];
+// čas drhnutí: začíná na 5 s a postupně roste na 3 minuty (pořád se něco děje, aby dítě udrželo pozornost)
+const DUR = [5, 8, 12, 16, 20, 25, 30, 36, 43, 50, 60, 70, 80, 92, 105, 120, 135, 150, 165, 180];
 function lvlCfg(i) {
   const pool = ['germs'];
   if (i >= 1) pool.push('snack');
   if (i >= 2) pool.push('gaps');
   if (i >= 3) pool.push('jump');
   if (i >= 4) pool.push('star', 'tough');
+  if (i >= 6) pool.push('ultra');
   return {
     dur: DUR[i] || 180, pool,
     germs: Math.min(2 + Math.floor(i / 3), 6), gaps: i >= 2 ? 1 + (i >= 8 ? 1 : 0) : 0, tough: i >= 4 ? 1 + Math.floor(i / 8) : 0,
-    hops: i >= 12 ? 2 : i >= 5 ? 1 : 0, tongue: i >= 5, boss: i === CHARS.length - 1, rate: 0.0036, quiz3: i >= 6,
-    intro: { gaps: i === 2, hop: i === 5, tough: i === 4 }
+    hops: i >= 12 ? 2 : i >= 5 ? 1 : 0, tongue: i >= 5, ultra: i >= 4 ? 1 + Math.floor((i - 4) / 5) : 0, boss: i === CHARS.length - 1, rate: 0.0036, quiz3: i >= 6,
+    intro: { gaps: i === 2, hop: i === 5, tough: i === 4, ultra: i === 4 }
   };
 }
 
@@ -189,7 +195,7 @@ const Reward = {
 };
 
 // ===== Level =====
-const FCX = 800, FCY = 380, FR = 340;
+const FCX = 800, FCY = 380, FR = 340, FOAM_LIFE = 1.1;
 const BRUSH_SC = 1.3, BRUSH_OFF = { x: -50, y: -95 };
 const FACE_SPOTS = [{ k: 'nose', x: 0, y: -0.2 }, { k: 'cheek', x: -0.66, y: -0.1 }, { k: 'cheek', x: 0.66, y: -0.1 }, { k: 'head', x: 0, y: -0.78 }];
 const Lv = {
@@ -202,7 +208,9 @@ const Lv = {
     this.gaps = []; this.germs = []; this.foam = []; this.foamAcc = 0;
     this.addGaps(this.cfg.gaps); this.makeTough(this.cfg.tough);
     for (let k = 0; k < this.cfg.germs; k++) this.addGerm(rndi(0, this.teeth.length - 1), { c: GERMC[k % GERMC.length], hops: this.cfg.hops });
-    this.brush = { x: PB.x, y: PB.y, held: false, speed: 0, sc: PB.sc };
+    for (let k = 0; k < this.cfg.ultra; k++) this.addUltra();
+    this.fallers = [];
+    this.brush = { x: PB.x, y: PB.y, held: false, speed: 0, sc: PB.sc, flip: 1, flipT: 1, ang: -0.15, angT: 1 };
     this.cup = { x: 1390, y: 560, rx: 1390, ry: 560, held: false, gx: 0, gy: 0, pour: -1 };
     this.tg = { k: 0, dirt: 1, spots: Array.from({ length: 9 }, (_, i) => ({ u: rnd(-0.7, 0.7), v: rnd(-0.6, 0.6), r: rnd(14, 24), k: i / 9 })) };
     this.brushT = 0; this.waveN = 0; this.lastWave = null; this.waveWait = -1; this.bonus = [];
@@ -210,6 +218,7 @@ const Lv = {
     Music.on = false;
   },
   addGerm(ti, o) { const g = Object.assign({ ti, u: rnd(0.35, 0.65), v: this.teeth[ti].upper ? 0.6 : 0.4, hp: 3, hit: 0, sq: 0, ph: rnd(0, 6), dead: false, r: 25, hops: 0, hopCd: 0, hop: null, face: null }, o); this.germs.push(g); return g; },
+  addUltra(hop) { return this.addGerm(rndi(0, this.teeth.length - 1), { ultra: true, c: ['#ffcf3f', '#e8332b'], r: 36, hp: 7, hops: 1, hop: hop || null }); },
   addGaps(n) {
     const pairs = []; this.teeth.forEach((t, i) => { const nx = this.teeth[i + 1]; if (nx && nx.upper === t.upper && !this.gaps.some(g => !g.done && g.a === i)) pairs.push([i, i + 1]); });
     shuffle(pairs).slice(0, n).forEach(([a, b]) => this.gaps.push({ a, b, prog: 0, done: false, f: this.c.food }));
@@ -226,7 +235,7 @@ const Lv = {
   gapPos(g) { const a = this.teeth[g.a], b = this.teeth[g.b], h = Math.min(a.h, b.h); return { x: (a.x + a.w + b.x) / 2, y: a.upper ? a.y + h * 0.5 : a.y + a.h - h * 0.5, up: a.upper }; },
   boardClear() {
     const avg = this.teeth.reduce((s, t) => s + t.dirt, 0) / this.teeth.length, maxD = Math.max(...this.teeth.map(t => t.dirt));
-    return avg < 0.05 && maxD < 0.2 && !this.germs.some(g => !g.dead) && !this.gaps.some(g => !g.done) && !this.bonus.some(b => !b.got);
+    return avg < 0.05 && maxD < 0.2 && !this.germs.some(g => !g.dead) && !this.gaps.some(g => !g.done) && !this.bonus.some(b => !b.got) && !(this.fallers && this.fallers.length);
   },
   setPhase(p) { this.phase = p; this.pt = 0; },
   update(dt) {
@@ -236,7 +245,11 @@ const Lv = {
     if (P_ === 'intro') { this.open = easeBack(this.pt / 1.0); if (this.pt > 1.6) { this.setPhase('prep'); Prep.start(this); } }
     if (P_ === 'prep' && Prep.update(dt)) { this.setPhase('brush'); this.lastProgT = T; b.x = PB.x; b.y = PB.y; this.startBrushTalk(); }
     if (P_ === 'brush') this.updBrush(dt);
-    if (P_ === 'brush' || P_ === 'tongue') { b.sc = lerp(b.sc, BRUSH_SC, dt * 5); b.speed *= Math.pow(0.02, dt); scrubWant = b.held ? clamp(b.speed / 9000, 0, 0.16) : 0; }
+    if (P_ === 'brush' || P_ === 'tongue') {
+      if (b.held) { if (b.x < FCX - 70) b.flipT = -1; else if (b.x > FCX + 70) b.flipT = 1; const m0 = this.mouthRect(this.open); b.angT = b.y > m0.y + m0.h * 0.55 ? 0.55 : 1.0; }
+      b.flip = lerp(b.flip, b.flipT, dt * 8); b.ang = lerp(b.ang, b.held ? b.angT : -0.15, dt * 8);
+      if (P_ === 'brush' && this.open < 1) this.open = Math.min(1, this.open + dt * 3);
+      b.sc = lerp(b.sc, BRUSH_SC, dt * 5); b.speed *= Math.pow(0.02, dt); scrubWant = b.held ? clamp(b.speed / 9000, 0, 0.16) : 0; }
     if (P_ === 'tongue') {
       this.tg.k = Math.min(1, this.tg.k + dt * 2);
       if (this.tg.dirt < 0.05) { this.tg.dirt = 0; Snd.sparkle(); this.toClean(); }
@@ -252,11 +265,13 @@ const Lv = {
     if (P_ === 'quiz') {
       this.open = Math.max(0, this.open - dt * 3);
       this.sadT -= dt;
-      if (this.chewT >= 0) { this.chewT += dt; if (this.chewT > 2.4) { this.setPhase('reward'); this.startReward(); } }
+      if (this.chewT >= 0) { this.chewT += dt; if (this.chewT > 2.4) { this.chewT = -1; if (this.wrongPick) this.again(); else { this.setPhase('reward'); this.startReward(); } } }
       else if (this.pt > 12 && T - lastSay > IDLE_REPEAT) say(P.quizRemind);
     }
     if (P_ === 'reward') Reward.update(dt);
-    for (const f of this.foam) f.a = Math.min(1, f.a + dt * 4);
+    // pěna: bílá → průhlednější → rychle praskne
+    for (const f of this.foam) { f.a = Math.min(1, f.a + dt * 6); f.age = (f.age || 0) + dt; }
+    if (this.foam.length && this.foam[0].age > FOAM_LIFE) { const keep = []; for (const f of this.foam) { if (f.age > FOAM_LIFE) { if (Math.random() < 0.25) addPart({ x: f.x, y: f.y, vx: rnd(-40, 40), vy: rnd(-90, -30), life: 0.25, size: f.r * 0.5, type: 'bubble' }); } else keep.push(f); } this.foam = keep; }
     if (this.snackFx) { this.snackFx.t += dt; if (this.snackFx.t > 1.2) this.snackFx = null; }
   },
   startBrushTalk() {
@@ -265,6 +280,7 @@ const Lv = {
     if (i.gaps && firstTimes('gapIntro')) say(P.gapIntro, true);
     if (i.tough && firstTimes('toughIntro')) say(P.toughIntro, true);
     if (i.hop && firstTimes('hopIntro')) say(P.hopIntro, true);
+    if (this.cfg.ultra && firstTimes('ultraIntro')) say(P.ultra, true);
   },
   updBrush(dt) {
     const b = this.brush, m = this.mouthRect(this.open);
@@ -283,6 +299,17 @@ const Lv = {
         }
       }
     }
+    const m2 = this.mouthRect(this.open);
+    for (const f of this.fallers) {
+      f.y += f.v * dt; f.x = lerp(f.x, f.tx, dt * 0.9); f.rot += dt * 3;
+      if (b.held && f.y > 0 && dist(b.x, b.y, f.x, f.y) < 90) this.shoot(f);
+      else if (f.y > m2.y + m2.h * 0.35) { // spadlo do pusy
+        f.done = true; Snd.munch(); this.chewFx = 0.6;
+        this.teeth.map((t, i) => [Math.abs(t.x + t.w / 2 - f.x), i]).sort((p, q) => p[0] - q[0]).slice(0, 3).forEach(([, i]) => { const t = this.teeth[i]; t.dirt = 1; t.clean = false; });
+      }
+    }
+    if (this.fallers.some(f => f.done)) this.fallers = this.fallers.filter(f => !f.done);
+    this.chewFx = Math.max(0, (this.chewFx || 0) - dt);
     const clear = this.boardClear();
     if (clear && this.brushT >= this.cfg.dur) {
       b.held = false; Snd.fanfare(); burst(FCX, FCY + 100, 40, { smin: 150, smax: 600 });
@@ -312,10 +339,12 @@ const Lv = {
       for (let k = 0; k < cnt; k++) { const side = k % 2 ? 1 : -1; this.addGerm(rndi(0, n - 1), { c: GERMC[(k + this.waveN) % GERMC.length], hops: this.cfg.hops, hop: { fx: FCX + side * 700, fy: FCY + rnd(-100, 100), t: -k * 0.25 } }); }
       Snd.hihi();
     }
-    if (w === 'snack') {
-      this.snackFx = { t: 0, food: pick(['cake', 'choco', 'lolly', 'apple']) };
-      setTimeout(() => { if (this.phase !== 'brush') return; Snd.munch(); shuffle([...this.teeth.keys()]).slice(0, Math.ceil(n * 0.6)).forEach(i => { this.teeth[i].dirt = 1; this.teeth[i].clean = false; }); }, 700);
+    if (w === 'snack') { // kamarád dostal chuť: jídlo padá do pusy, kartáčkem ho jde sestřelit
+      const m = this.mouthRect(this.open), k = 3 + Math.min(3, Math.floor(this.ci / 5));
+      for (let j = 0; j < k; j++) this.fallers.push({ food: pick(['cake', 'choco', 'lolly', 'donut', 'gummy', 'icecream']), x: rnd(250, 1350), y: -90 - j * 190, tx: rnd(m.x + 70, m.x + m.w - 70), v: rnd(160, 210) + this.ci * 5, rot: rnd(0, 6) });
+      if (firstTimes('snackShoot', 2)) say(P.snackShoot);
     }
+    if (w === 'ultra') { const sd = Math.random() < 0.5 ? -1 : 1; this.addUltra({ fx: FCX + sd * 700, fy: FCY, t: 0 }); Snd.hihi(); }
     if (w === 'gaps') this.addGaps(1 + (this.ci >= 8 ? 1 : 0));
     if (w === 'tough') this.makeTough(1 + Math.floor(this.ci / 8));
     if (w === 'jump') {
@@ -326,6 +355,7 @@ const Lv = {
     if (w === 'star') { const ti = rndi(0, n - 1); this.bonus.push({ ti, prog: 0, got: false }); Snd.sparkle(); if (firstTimes('star')) say(P.starWave); }
     if (w === 'boss') { this.said.boss = true; this.addGerm(rndi(0, n - 1), { c: ['#c86bff', '#7a2fb0'], r: 48, hp: 8, boss: true, hop: { fx: FCX, fy: -100, t: 0 } }); if (firstTimes('boss', 2)) say(P.boss); }
   },
+  shoot(f) { f.done = true; Snd.pop(); Snd.ding(); buzz(25); burst(f.x, f.y, 22, { colors: ['#ffffff', '#ffd700', FOODC[f.food] || '#ff8fc7'], smin: 120, smax: 420 }); praise(pick(P.praise), 30); },
   toClean() { this.setPhase('clean'); },
   updRinse(dt) {
     const c = this.cup, m = this.mouthRect(this.open);
@@ -346,11 +376,19 @@ const Lv = {
     if (this.pt > 12 && T - lastSay > IDLE_REPEAT && !c.held) say(P.rinseRemind);
   },
   setupQuiz() {
-    const good = pick(['apple', 'carrot', 'cheese']), bads = shuffle(['lolly', 'choco', 'soda', 'cake']);
-    const ids = shuffle(this.cfg.quiz3 ? [good, bads[0], bads[1]] : [good, bads[0]]);
-    const pos = this.cfg.quiz3 ? shuffle([[230, 230], [230, 560], [1370, 420]]) : [[250, 420], [1350, 420]];
-    this.quiz = { r: this.cfg.quiz3 ? 115 : 150, items: ids.map((id, i) => ({ id, x: pos[i][0], y: pos[i][1], wob: 0, gone: false, fly: -1 })) };
+    const ids = shuffle(shuffle(GOOD_FOOD).slice(0, 3).concat(shuffle(BAD_FOOD).slice(0, 2)));
+    const pos = shuffle([[215, 230], [215, 520], [1390, 165], [1390, 390], [1390, 610]]);
+    this.quiz = { r: 92, items: ids.map((id, i) => ({ id, x: pos[i][0], y: pos[i][1], wob: 0, gone: false, fly: -1 })) };
+    this.wrongPick = false;
     if (firstTimes('quiz', 2)) say(P.quiz, true);
+  },
+  // vybral sladkost: zoubky jsou zase špinavé, 10 s čištění navíc a pak znovu nabídka
+  again() {
+    this.quiz = null; this.wrongPick = false; this.cfg.tongue = false; this.cfg.dur = this.brushT + 10;
+    shuffle([...this.teeth.keys()]).slice(0, Math.ceil(this.teeth.length * 0.6)).forEach(i => { this.teeth[i].dirt = 1; this.teeth[i].clean = false; });
+    this.cup = { x: 1390, y: 560, rx: 1390, ry: 560, held: false, gx: 0, gy: 0, pour: -1 }; this.foam = []; this.waveWait = -1;
+    this.brush.x = PB.x; this.brush.y = PB.y; this.lastProgT = T;
+    this.setPhase('brush');
   },
   startReward() {
     const first = Save.done.indexOf(this.c.id) < 0;
@@ -380,13 +418,13 @@ const Lv = {
   down(x, y) {
     const P_ = this.phase;
     if (P_ === 'prep') { Prep.down(x, y); this.px = x; this.py = y; return; }
-    if (P_ === 'brush' || P_ === 'tongue') { const b = this.brush; b.held = true; b.x = x + BRUSH_OFF.x; b.y = y + BRUSH_OFF.y; return; }
+    if (P_ === 'brush' || P_ === 'tongue') { const b = this.brush; b.held = true; b.x = x + BRUSH_OFF.x * b.flip; b.y = y + BRUSH_OFF.y; return; }
     if (P_ === 'rinse' && this.cup.pour < 0) { const c = this.cup; if (dist(x, y, c.x, c.y) < 190) { c.held = true; c.gx = c.x - x; c.gy = c.y - y; Snd.tap(); } return; }
     if (P_ === 'quiz' && this.quiz && this.chewT < 0) {
       for (const it of this.quiz.items) {
         if (it.gone || dist(x, y, it.x, it.y) > this.quiz.r + 20) continue;
         if (FOOD[it.id].good) { it.fly = 0; this.chewT = 0; Snd.ding(); setTimeout(() => Snd.munch(), 450); buzz(40); burst(it.x, it.y, 25, {}); praise(FOOD[it.id].yes, 20); }
-        else { it.wob = 1; this.sadT = 1.6; Snd.wrong(); buzz(120); if (T - lastSay > 6) say(P.wrong); }
+        else { it.fly = 0; this.chewT = 0; this.wrongPick = true; this.sadT = 2.4; setTimeout(() => { Snd.munch(); Snd.wrong(); }, 450); buzz(120); say(P.wrongBrush, true); }
       }
       return;
     }
@@ -397,7 +435,7 @@ const Lv = {
     if (P_ === 'prep') { Prep.move(x, y, x - (this.px || x), y - (this.py || y)); this.px = x; this.py = y; return; }
     if (P_ === 'rinse' && this.cup.held) { this.cup.x = x + this.cup.gx; this.cup.y = y + this.cup.gy; return; }
     const b = this.brush; if ((P_ !== 'brush' && P_ !== 'tongue') || !b.held) return;
-    const nx = x + BRUSH_OFF.x, ny = y + BRUSH_OFF.y, dx = nx - b.x, dy = ny - b.y, d = Math.hypot(dx, dy);
+    const nx = x + BRUSH_OFF.x * b.flip, ny = y + BRUSH_OFF.y, dx = nx - b.x, dy = ny - b.y, d = Math.hypot(dx, dy);
     b.x = nx; b.y = ny; if (d < 0.5) return;
     b.speed = b.speed * 0.6 + d * 96;
     const m = this.mouthRect(this.open);
@@ -413,6 +451,7 @@ const Lv = {
         if (!t.clean && t.dirt < 0.05) { t.clean = true; t.dirt = 0; t.tough = false; Snd.ding(); burst(t.x + t.w / 2, t.y + t.h / 2, 10, { smin: 60, smax: 220 }); }
       }
     }
+    for (const f of this.fallers) if (!f.done && f.y > 0 && dist(b.x, b.y, f.x, f.y) < 90) { this.shoot(f); progressed = true; }
     for (const bn of this.bonus) {
       if (bn.got) continue; const t = this.teeth[bn.ti];
       if (Math.abs(b.x - (t.x + t.w / 2)) < 60 && Math.abs(b.y - (t.y + t.h / 2)) < 60) { bn.prog += d / 300; progressed = true; if (bn.prog >= 1) { bn.got = true; Snd.sparkle(); Snd.ding(); buzz(40); burst(t.x + t.w / 2, t.y + t.h / 2, 30, { colors: ['#ffd700', '#fff3a0'] }); } }
@@ -420,7 +459,7 @@ const Lv = {
     for (const g of this.gaps) {
       if (g.done) continue; const p = this.gapPos(g);
       if (Math.abs(b.x - p.x) < 58 && Math.abs(b.y - p.y) < 80) {
-        g.prog += (Math.abs(dy) + Math.abs(dx) * 0.25) / 260; progressed = true;
+        g.prog += (Math.abs(dy) + Math.abs(dx) * 0.6) / 120; progressed = true;
         if (g.prog >= 1) { g.done = true; Snd.pop(); Snd.ding(); buzz(30); burst(p.x, p.y, 16, { colors: [FOODC[g.f] || '#fff', '#ffffff', '#ffd700'] }); }
       }
     }
@@ -429,7 +468,7 @@ const Lv = {
       if (dist(b.x, b.y, p.x, p.y) < 55 + g.r && g.hit <= 0) {
         g.hp--; g.hit = 0.22; g.sq = 1; progressed = true;
         if (g.hp <= 0) {
-          g.dead = true; Snd.pop(); buzz(25); burst(p.x, p.y, g.boss ? 40 : 18, { colors: [g.c[0], '#ffffff', '#ffd700'] });
+          g.dead = true; Snd.pop(); buzz(g.ultra ? 60 : 25); burst(p.x, p.y, g.boss || g.ultra ? 40 : 18, { colors: [g.c[0], '#ffffff', '#ffd700'] }); if (g.ultra) Snd.sparkle();
           if (g.boss) { const fr = shuffle([...this.teeth.keys()]); for (let k = 0; k < 3; k++) this.addGerm(fr[k], { c: GERMC[k], hp: 2, hops: 1, hop: { fx: p.x, fy: p.y, t: 0 } }); }
           else praise(pick(P.praise), 35);
         } else Snd.boing();
@@ -457,8 +496,8 @@ const Lv = {
       if (bn.got) continue; const t = this.teeth[bn.ti], s = 22 * (1 - bn.prog * 0.3) + Math.sin(T * 6) * 3;
       ctx.fillStyle = '#ffd700'; starPath(t.x + t.w / 2, t.y + t.h / 2, s, s * 0.45, 5); ctx.fill(); ctx.strokeStyle = '#e69500'; ctx.lineWidth = 3; ctx.stroke();
     }
-    for (const g of this.germs) { if (g.dead || g.face != null || g.hop) continue; const p = this.germPos(g); drawGerm(p.x, p.y, g.r, g.c, g.ph, g.sq, g.hit > 0 || (this.brush.held && dist(this.brush.x, this.brush.y, p.x, p.y) < 160), g.boss); }
-    for (const f of this.foam) { const r = f.r * f.a; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(160,210,240,.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(f.x - r * 0.35, f.y - r * 0.35, r * 0.25, 0, 7); ctx.fill(); }
+    for (const g of this.germs) { if (g.dead || g.face != null || g.hop) continue; const p = this.germPos(g); if (g.ultra) drawUltraAura(p.x, p.y, g.r, g.hp); drawGerm(p.x, p.y, g.r, g.c, g.ph, g.sq, g.hit > 0 || (this.brush.held && dist(this.brush.x, this.brush.y, p.x, p.y) < 160), g.boss || g.ultra); }
+    for (const f of this.foam) { const age = f.age || 0, al = age < 0.25 ? 0.92 : 0.92 * Math.max(0, 1 - (age - 0.25) / (FOAM_LIFE - 0.25)), r = f.r * f.a * (1 + age * 0.15); ctx.fillStyle = 'rgba(255,255,255,' + al * 0.95 + ')'; ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(160,210,240,' + Math.min(0.85, al + 0.2) + ')'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, al + 0.3) + ')'; ctx.beginPath(); ctx.arc(f.x - r * 0.35, f.y - r * 0.35, r * 0.25, 0, 7); ctx.fill(); }
   },
   draw() {
     bgBath();
@@ -475,7 +514,7 @@ const Lv = {
       tongue: this.tg.k, tongueDirt: this.tg.dirt, tongueSpots: this.tg.spots
     });
     // bacilové, kteří utekli z pusy na obličej nebo teprve přibíhají
-    for (const g of this.germs) { if (g.dead || (g.face == null && !g.hop) || (g.hop && g.hop.t < 0)) continue; const p = this.germPos(g); drawGerm(p.x, p.y, g.r * (g.face != null ? 1.3 : 1), g.c, g.ph, g.sq, g.hit > 0, false); }
+    for (const g of this.germs) { if (g.dead || (g.face == null && !g.hop) || (g.hop && g.hop.t < 0)) continue; const p = this.germPos(g); if (g.ultra) drawUltraAura(p.x, p.y, g.r, g.hp); drawGerm(p.x, p.y, g.r * (g.face != null ? 1.3 : 1), g.c, g.ph, g.sq, g.hit > 0, false); }
     if (this.snackFx) { const k = ease(this.snackFx.t / 0.7); drawFood(this.snackFx.food, lerp(1500, FCX, k), lerp(150, m.y + m.h / 2, k) - Math.sin(k * Math.PI) * 150, 70 * (1 - k * 0.7), k * 6); }
     if (this.veil > 0.01) { const f = full(); ctx.fillStyle = 'rgba(235,248,255,' + (0.6 * this.veil) + ')'; ctx.fillRect(f.x, f.y, f.w, f.h); }
     if (P_ === 'brush' || P_ === 'tongue' || P_ === 'clean') {
@@ -487,7 +526,8 @@ const Lv = {
       ctx.fillStyle = pr >= 1 ? '#ffcc00' : 'rgba(255,255,255,.9)'; starPath(1150, 36, 30, 14, 5); ctx.fill(); ctx.strokeStyle = pr >= 1 ? '#e69500' : '#9bc7d8'; ctx.lineWidth = 3; ctx.stroke();
     }
     if (P_ === 'prep') Prep.draw();
-    if (P_ === 'brush' || P_ === 'tongue') drawBrush(b.x, b.y, b.held ? 1.0 + Math.sin(T * 30) * 0.02 * clamp(b.speed / 3000, 0, 1) : -0.15, b.sc, 1);
+    if (P_ === 'brush') for (const f of this.fallers) { if (f.y < -60) continue; ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.beginPath(); ctx.arc(f.x + 8, f.y + 10, 52, 0, 7); ctx.fill(); drawFood(f.food, f.x, f.y, 55, Math.sin(f.rot) * 0.4); }
+    if (P_ === 'brush' || P_ === 'tongue') { const fl = Math.abs(b.flip) < 0.12 ? Math.sign(b.flip || 1) * 0.12 : b.flip; ctx.save(); ctx.translate(b.x, b.y); ctx.scale(fl, 1); drawBrush(0, 0, b.ang + (b.held ? Math.sin(T * 30) * 0.02 * clamp(b.speed / 3000, 0, 1) : 0), b.sc, 1); ctx.restore(); }
     if (P_ === 'clean') drawBrush(b.x, b.y, -0.15, BRUSH_SC, 1);
     if (P_ === 'rinse') { const c2 = this.cup, r = c2.pour; drawCup(c2.x, c2.y, r < 0 && !c2.held ? 1 + Math.sin(T * 5) * 0.04 : 1, r >= 0 ? lerp(0, -1.1, ease(r / 0.4)) * (r > 2.0 ? Math.max(0, 1 - (r - 2) * 2) : 1) : 0, r >= 0 ? 1 - clamp(r / 1.4, 0, 1) : 1); }
     if (P_ === 'quiz' && this.quiz) {
