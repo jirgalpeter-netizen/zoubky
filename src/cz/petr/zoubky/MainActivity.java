@@ -97,6 +97,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         @JavascriptInterface
+        public void stopSpeak() {
+            runOnUiThread(new Runnable() { public void run() { if (tts != null) tts.stop(); } });
+        }
+
+        @JavascriptInterface
         public boolean ttsOk() { return ttsReady; }
     }
 
