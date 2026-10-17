@@ -64,23 +64,34 @@ footer a{color:inherit}
 <div class="wrap">
   <!-- 1) Hlavně: nainstalovat do mobilu jako aplikaci -->
   <div class="card" id="install">
-    <p class="lead">📲 Nainstaluj si Zoubky do mobilu</p>
-    <p class="note" style="margin:0 0 10px">Za minutu je máš na ploše jako aplikaci – zdarma, bez reklam, bez varování a funguje i bez internetu.</p>
+    <p class="lead">📲 Nainstaluj si Zoubky do mobilu jako aplikaci</p>
+    <p class="note" style="margin:0 0 10px">Za minutu je máš na ploše – zdarma, bez reklam a funguje i bez internetu.</p>
     <div class="tabs" role="tablist">
       <button role="tab" id="tA" aria-selected="false">🤖 Android</button>
       <button role="tab" id="tI" aria-selected="false">🍎 iPhone / iPad</button>
     </div>
     <div id="pA" class="hide">
-      <div id="a-prompt" class="hide">
-        <button class="btn" id="btnInstall">⬇️ Nainstalovat Zoubky</button>
-        <p class="note">Jedno ťuknutí a hra se objeví na ploše.</p>
-      </div>
-      <div id="a-done" class="hide"><p style="font-size:22px;font-weight:800;margin:6px 0">✅ Hotovo! Zoubky najdeš na ploše telefonu.</p></div>
-      <ol class="steps" id="a-steps">
-        <li><span class="n">1</span><span>Otevři tuhle stránku v prohlížeči <b>Chrome</b>.</span></li>
-        <li><span class="n">2</span><span>Vpravo nahoře ťukni na <span class="k">⋮</span> a vyber <span class="k">Přidat na plochu</span> → <span class="k">Instalovat</span>.</span></li>
-        <li><span class="n">3</span><span>Na ploše se objeví ikonka <b>Zoubky</b>. Hotovo!</span></li>
+      <a class="btn" href="https://github.com/jirgalpeter-netizen/zoubky/releases/latest/download/Zoubky.apk">⬇️ Stáhnout aplikaci Zoubky (APK)</a>
+      <p class="note">Plná aplikace do telefonu – s hlasem, vibracemi a na celou obrazovku.</p>
+      <ol class="steps">
+        <li><span class="n">1</span><span>Ťukni na tlačítko nahoře. Když se prohlížeč zeptá, zvol <span class="k">Stáhnout</span> / <span class="k">Přesto stáhnout</span>.</span></li>
+        <li><span class="n">2</span><span>Otevři stažený soubor <b>Zoubky.apk</b> (v oznámeních nebo ve složce Stažené).</span></li>
+        <li><span class="n">3</span><span>Když telefon napíše, že instalaci z tohoto zdroje nepovoluje, ťukni na <span class="k">Nastavení</span> a zapni <span class="k">Povolit z tohoto zdroje</span>, pak se vrať zpět.</span></li>
+        <li><span class="n">4</span><span>Ťukni na <span class="k">Instalovat</span>. Když se ozve Play Protect, zvol <span class="k">Další podrobnosti</span> → <span class="k">Přesto nainstalovat</span>.</span></li>
+        <li><span class="n">5</span><span>Hotovo – ikonka <b>Zoubky</b> je na ploše.</span></li>
       </ol>
+      <p class="note">Samsung s <b>Automatickým blokátorem</b> instalaci zastaví: <span class="k">Nastavení</span> → <span class="k">Zabezpečení a soukromí</span> → <span class="k">Automatický blokátor</span> → vypnout, nainstalovat a zase zapnout.</p>
+      <details style="margin-top:12px;text-align:left">
+        <summary>Nejde to? Nainstaluj ji jako webovou aplikaci</summary>
+        <div id="a-prompt" class="hide" style="text-align:center;margin-top:10px">
+          <button class="btn sec" id="btnInstall">⬇️ Nainstalovat jako webovou aplikaci</button>
+        </div>
+        <div id="a-done" class="hide"><p style="font-weight:800;margin:6px 0">✅ Hotovo! Zoubky najdeš na ploše telefonu.</p></div>
+        <ol class="steps" id="a-steps">
+          <li><span class="n">1</span><span>Otevři tuhle stránku v prohlížeči <b>Chrome</b>.</span></li>
+          <li><span class="n">2</span><span>Vpravo nahoře ťukni na <span class="k">⋮</span> a vyber <span class="k">Přidat na plochu</span> → <span class="k">Instalovat</span>.</span></li>
+        </ol>
+      </details>
     </div>
     <div id="pI" class="hide">
       <ol class="steps">
@@ -126,18 +137,6 @@ footer a{color:inherit}
   </div>
   <p class="note">Hra mluví jen tehdy, když je potřeba: poprvé vysvětlí, napoví, když dítě neví, a občas pochválí.</p>
 
-  <details id="apk">
-    <summary>Instalace z APK souboru (Android, pro pokročilé)</summary>
-    <p>Pokud chceš verzi s hlasem a vibracemi jako samostatný soubor:</p>
-    <a class="btn sec" href="https://github.com/jirgalpeter-netizen/zoubky/releases/latest/download/Zoubky.apk">Stáhnout Zoubky.apk</a>
-    <ol class="steps">
-      <li><span class="n">1</span><span>Prohlížeč se zeptá, jestli soubor stáhnout – zvol <span class="k">Přesto stáhnout</span>.</span></li>
-      <li><span class="n">2</span><span>Otevři stažený soubor. Když telefon napíše, že instalaci z tohoto zdroje nepovoluje, ťukni na <span class="k">Nastavení</span> a zapni <span class="k">Povolit z tohoto zdroje</span>.</span></li>
-      <li><span class="n">3</span><span>Když se ozve Play Protect, ťukni na <span class="k">Další podrobnosti</span> → <span class="k">Přesto nainstalovat</span>.</span></li>
-      <li><span class="n">4</span><span>Samsung s <b>Automatickým blokátorem</b> instalaci zastaví úplně: <span class="k">Nastavení → Zabezpečení a soukromí → Automatický blokátor</span> → vypnout, nainstalovat a zase zapnout.</span></li>
-    </ol>
-    <p class="note">Jednodušší je instalace nahoře – ta žádná varování nemá.</p>
-  </details>
 
   <footer>Bez reklam · bez nákupů · nesbírá žádná data<br><a href="soukromi.html">Zásady ochrany soukromí</a> · <a href="https://github.com/jirgalpeter-netizen/zoubky">Zdrojový kód</a></footer>
 </div>
@@ -156,10 +155,9 @@ footer a{color:inherit}
   $('tA').onclick=function(){tab('A')}; $('tI').onclick=function(){tab('I')};
   tab(ios?'I':'A');
   if(!ios&&!android){$('d-play').classList.remove('hide');document.body.classList.add('desk')}
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;$('a-prompt').classList.remove('hide');$('a-steps').classList.add('hide');tab('A')});
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;$('a-prompt').classList.remove('hide');$('a-steps').classList.add('hide')});
   window.addEventListener('appinstalled',function(){$('a-prompt').classList.add('hide');$('a-done').classList.remove('hide')});
   $('btnInstall').onclick=function(){if(!deferred)return;deferred.prompt();deferred.userChoice.then(function(r){if(r.outcome==='accepted'){$('a-prompt').classList.add('hide');$('a-done').classList.remove('hide')}deferred=null})};
-  if(location.hash==='#apk')$('apk').open=true;
 })();
 </script>
 </body>
