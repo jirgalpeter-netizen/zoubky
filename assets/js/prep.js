@@ -30,7 +30,7 @@ const Prep = {
     this.i++; this.t = 0; this.acc = 0; this.stroke = 0; this.lastA = null; this.holding = false; this.saidRem = 0;
     if (this.i >= this.steps.length) { this.done = true; this.doneT = 0; return; }
     const s = this.step();
-    say(G(P[PREP_SAY[s]]), true);
+    if (firstTimes('prep_' + s, 2)) say(G(P[PREP_SAY[s]]), true);
     const t = this.tube;
     if (s === 'unscrew' || s === 'screw') { t.tx = { x: TUBE_MID.x, y: TUBE_MID.y, rot: 0, sc: TUBE_MID.sc }; }
     else if (s === 'bring') t.tx = { x: TUBE_REST.x, y: TUBE_REST.y, rot: 0, sc: TUBE_REST.sc };
@@ -45,7 +45,7 @@ const Prep = {
   addPaste(a) {
     const before = this.paste; this.paste = Math.min(1.35, this.paste + a);
     const nz = this.nozzle(); for (let k = 0; k < 3; k++) addPart({ x: nz.x, y: nz.y, vx: rnd(-40, 40), vy: rnd(20, 90), life: 0.35, size: rnd(5, 10), color: '#ffffff' });
-    if (before < 1.35 && this.paste >= 1.35) { Snd.sparkle(); say(P.pasteDone); setTimeout(() => this.lv.phase === 'prep' && this.step() && SQUEEZES.indexOf(this.step()) >= 0 && this.next(), 700); this.tube.tx = { x: TUBE_REST.x - 120, y: TUBE_REST.y + 60, rot: 0, sc: TUBE_REST.sc }; }
+    if (before < 1.35 && this.paste >= 1.35) { Snd.sparkle(); setTimeout(() => this.lv.phase === 'prep' && this.step() && SQUEEZES.indexOf(this.step()) >= 0 && this.next(), 700); this.tube.tx = { x: TUBE_REST.x - 120, y: TUBE_REST.y + 60, rot: 0, sc: TUBE_REST.sc }; }
   },
   update(dt) {
     const t = this.tube; this.t += dt;
@@ -69,7 +69,7 @@ const Prep = {
       const c = this.capObj, cp = this.capPos(); c.x = lerp(c.x, cp.x, dt * 8); c.y = lerp(c.y, cp.y, dt * 8); c.ang = lerp(c.ang, t.rot, dt * 8);
       if (dist(c.x, c.y, cp.x, cp.y) < 6) { this.capObj = null; t.cap = 'on'; t.out = 1; Snd.tap(); }
     }
-    if (this.t > 9 && T - lastSay > 9) say(G(P[PREP_SAY[s]]));
+    if (this.t > IDLE_HINT + 3 && T - lastSay > IDLE_REPEAT) say(G(P[PREP_SAY[s]]));
     return false;
   },
   down(x, y) {
@@ -79,7 +79,7 @@ const Prep = {
       BRUSHES.forEach((B, i) => {
         const p = this.pickSlot(i), ex = p.x + Math.cos(-0.5) * 300, ey = p.y + Math.sin(-0.5) * 300;
         const L2 = (ex - p.x) ** 2 + (ey - p.y) ** 2, u = clamp(((x - p.x) * (ex - p.x) + (y - p.y) * (ey - p.y)) / L2, 0, 1);
-        if (this.picked < 0 && dist(x, y, p.x + (ex - p.x) * u, p.y + (ey - p.y) * u) < 70) { this.picked = i; Save.brush = i; Save.save(); this.pickFrom = p; this.pickT = 0; Snd.sparkle(); buzz(25); burst(x, y, 16, {}); say(P.picked); }
+        if (this.picked < 0 && dist(x, y, p.x + (ex - p.x) * u, p.y + (ey - p.y) * u) < 70) { this.picked = i; Save.brush = i; Save.save(); this.pickFrom = p; this.pickT = 0; Snd.sparkle(); buzz(25); burst(x, y, 16, {}); }
       });
       return;
     }
@@ -100,7 +100,7 @@ const Prep = {
         const d = angDiff(a, this.lastA); this.acc += Math.abs(d); t.spin += d * (s === 'unscrew' ? 1 : -1);
         if ((this.acc / 0.6 | 0) !== ((this.acc - Math.abs(d)) / 0.6 | 0)) Snd.twist();
         if (s === 'unscrew') { t.out = clamp(this.acc / (Math.PI * 2 * 2.2), 0, 1); if (t.out >= 1) this.capOff(); }
-        else { t.out = clamp(1 - this.acc / (Math.PI * 2 * 1.5), 0, 1); if (t.out <= 0) { Snd.ding(); Snd.sparkle(); buzz(30); burst(cp.x, cp.y, 16, {}); say(P.capOn); this.next(); } }
+        else { t.out = clamp(1 - this.acc / (Math.PI * 2 * 1.5), 0, 1); if (t.out <= 0) { Snd.ding(); Snd.sparkle(); buzz(30); burst(cp.x, cp.y, 16, {}); this.next(); } }
       }
       this.lastA = a; return;
     }
@@ -114,7 +114,7 @@ const Prep = {
   capOff() {
     const t = this.tube, cp = this.capPos(); t.cap = 'off'; t.out = 0;
     this.capObj = { x: cp.x, y: cp.y, ang: t.rot, vx: 300, vy: -700, va: 9, fly: true };
-    Snd.pop(); Snd.sparkle(); buzz(40); burst(cp.x, cp.y, 18, {}); say(P.capOff); this.next();
+    Snd.pop(); Snd.sparkle(); buzz(40); burst(cp.x, cp.y, 18, {}); this.next();
   },
   hint() {
     const s = this.step(), t = this.tube; if (!s || this.done || this.t < 1.2) return null;

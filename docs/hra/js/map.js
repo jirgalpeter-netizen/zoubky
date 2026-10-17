@@ -4,9 +4,12 @@ const Scenes = {};
 function go(name, arg) { scene = name; sceneT = 0; parts = []; Reward.active = false; scrubWant = 0; Snd.scrub(0); ptrScene = null; Scenes[name].enter(arg); }
 
 // ===== MAPA ZOUBKOVÉ ZEMĚ =====
-const NODES = CHARS.map((c, i) => ({ x: 280 + i * 370, y: 480 + Math.sin(i * 1.3 + 0.4) * 130 }));
+// Mezi některými kamarády se cesta rozdvojí: nahoře a dole je zastávka s minihrou, obě větve vedou ke stejnému kamarádovi.
+const FORKS = { 1: ['paint', 'ears'], 3: ['bubbles', 'paint'], 5: ['ears', 'bubbles'], 10: ['paint', 'bubbles'], 13: ['ears', 'paint'], 16: ['bubbles', 'ears'] };
+const NODE_X = (() => { const xs = [280]; for (let i = 1; i < CHARS.length; i++) xs.push(xs[i - 1] + (FORKS[i - 1] ? 560 : 370)); return xs; })();
+const NODES = CHARS.map((c, i) => ({ x: NODE_X[i], y: 480 + Math.sin(i * 1.3 + 0.4) * 130 }));
 const WW = NODES[NODES.length - 1].x + 440;
-const NX = i => 280 + i * 370;
+const NX = f => { const i = Math.max(0, Math.min(NODES.length - 2, Math.floor(f))); return NODE_X[i] + (NODE_X[i + 1] - NODE_X[i]) * (f - i); };
 const ZONES = [ // [od x, do x, druh, barva země]
   [-600, NX(5.5), 'meadow', '#8fdc6a'], [NX(5.5), NX(8.5), 'forest', '#5fb84f'], [NX(8.5), NX(11.5), 'jungle', '#6cc04c'],
   [NX(11.5), NX(13.5), 'ginger', '#f2cfe0'], [NX(13.5), NX(16.5), 'town', '#a6d98a'], [NX(16.5), NX(17.5), 'swamp', '#7fa86a'],
@@ -15,16 +18,31 @@ const ZONES = [ // [od x, do x, druh, barva země]
 const RIVER_X = NX(8.5);
 function zoneAt(x) { for (const z of ZONES) if (x >= z[0] && x < z[1]) return z[2]; return 'meadow'; }
 const prand = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const bz = (a, b, c, d, t) => { const u = 1 - t; return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d; };
+// křivka úseku s → s+1; route: 'main' | 'up' | 'down'
+function segCurve(s, route) {
+  const A = NODES[s], B = NODES[s + 1], dx = B.x - A.x;
+  if (route === 'up' || route === 'down') {
+    const avg = (A.y + B.y) / 2, mid = route === 'up' ? Math.max(350, avg - 175) : Math.min(665, avg + 175), cy = (mid - 0.25 * avg) / 0.75;
+    return [A.x, A.y, A.x + dx * 0.22, cy, B.x - dx * 0.22, cy, B.x, B.y];
+  }
+  return [A.x, A.y, A.x + dx * 0.45, A.y, B.x - dx * 0.45, B.y, B.x, B.y];
+}
+function curvePt(k, t) { return { x: bz(k[0], k[2], k[4], k[6], t), y: bz(k[1], k[3], k[5], k[7], t) }; }
+function segRoutes(s) { return FORKS[s] ? ['up', 'down'] : ['main']; }
+function stationAt(s, route) { const k = segCurve(s, route), p = curvePt(k, 0.5); return { x: p.x, y: p.y, kind: FORKS[s][route === 'up' ? 0 : 1], key: s + route[0] }; }
+const STATIONS = []; for (const s in FORKS) for (const r of ['up', 'down']) STATIONS.push(Object.assign(stationAt(+s, r), { s: +s, route: r }));
+const PATH_SAMPLES = (() => { const out = []; for (let s = 0; s < NODES.length - 1; s++) for (const r of segRoutes(s)) { const k = segCurve(s, r); for (let t = 0; t <= 1; t += 0.04) out.push(curvePt(k, t)); } return out; })();
+function nearPath(x, y, d) { for (const p of PATH_SAMPLES) if (Math.abs(p.x - x) < d && Math.abs(p.y - y) < d) return true; return false; }
 function pathY(x) {
-  if (x <= NODES[0].x) return NODES[0].y;
-  for (let i = 0; i < NODES.length - 1; i++) { const a = NODES[i], b = NODES[i + 1]; if (x <= b.x) return lerp(a.y, b.y, (x - a.x) / (b.x - a.x)); }
+  for (let s = 0; s < NODES.length - 1; s++) { if (x > NODES[s + 1].x) continue; const k = segCurve(s, 'main'); let lo = 0, hi = 1; for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (curvePt(k, m).x < x) lo = m; else hi = m; } return curvePt(k, lo).y; }
   return NODES[NODES.length - 1].y;
 }
 const DECO = (() => {
   const out = [];
   for (let i = 0; i < 520; i++) {
     const x = prand(i) * WW, y = 310 + prand(i + 500) * 410;
-    if (Math.abs(y - pathY(x)) < 110 || Math.abs(x - RIVER_X) < 120) continue;
+    if (nearPath(x, y, 105) || Math.abs(x - RIVER_X) < 120) continue;
     const z = zoneAt(x), r = prand(i + 9);
     const kind = { meadow: r < 0.2 ? 'bush' : 'flower', forest: r < 0.65 ? 'tree' : r < 0.85 ? 'mushroom' : 'bush', jungle: r < 0.5 ? 'palm' : 'flower', ginger: r < 0.5 ? 'lolly' : r < 0.75 ? 'candy' : 'none', town: r < 0.25 ? 'house' : r < 0.6 ? 'flower' : 'tree', swamp: r < 0.6 ? 'reed' : 'lily', space: r < 0.5 ? 'crystal' : 'none', castle: r < 0.4 ? 'shell' : 'none' }[z];
     if (kind !== 'none') out.push({ x, y, kind, s: 0.7 + prand(i + 77) * 0.6, c: pick(['#ff8fc7', '#ffd23f', '#ffffff', '#b06cff', '#ff6b5e', '#5fd0ff']) });
@@ -97,32 +115,62 @@ function drawWorld(camX) {
   ctx.fillStyle = '#3fa9f5'; ctx.beginPath(); ctx.moveTo(WW - 260, f.y + f.h + 10); ctx.quadraticCurveTo(WW - 200, 560, WW + 600, 520); ctx.lineTo(WW + 600, f.y + f.h + 10); ctx.closePath(); ctx.fill();
   drawGingerHouse(NX(12.5), 400);
   drawUfo(NX(18) + 150, 170);
-  // cesta
-  const pathTrace = () => { ctx.beginPath(); ctx.moveTo(-200, NODES[0].y + 40); ctx.lineTo(NODES[0].x, NODES[0].y); for (let i = 1; i < NODES.length - 1; i++) { const p = NODES[i], q = NODES[i + 1]; ctx.quadraticCurveTo(p.x, p.y, (p.x + q.x) / 2, (p.y + q.y) / 2); } const L = NODES[NODES.length - 1]; ctx.lineTo(L.x, L.y); };
+  // cesta (s odbočkami)
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  pathTrace(); ctx.strokeStyle = '#e8c88a'; ctx.lineWidth = 64; ctx.stroke();
-  pathTrace(); ctx.strokeStyle = '#f6e2b4'; ctx.lineWidth = 50; ctx.stroke();
-  pathTrace(); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 7; ctx.setLineDash([18, 22]); ctx.stroke(); ctx.setLineDash([]);
+  const trace = () => { ctx.beginPath(); ctx.moveTo(-200, NODES[0].y + 40); ctx.lineTo(NODES[0].x, NODES[0].y); for (let s = 0; s < NODES.length - 1; s++) for (const r of segRoutes(s)) { const k = segCurve(s, r); ctx.moveTo(k[0], k[1]); ctx.bezierCurveTo(k[2], k[3], k[4], k[5], k[6], k[7]); } };
+  trace(); ctx.strokeStyle = '#e8c88a'; ctx.lineWidth = 64; ctx.stroke();
+  trace(); ctx.strokeStyle = '#f6e2b4'; ctx.lineWidth = 50; ctx.stroke();
+  trace(); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 7; ctx.setLineDash([18, 22]); ctx.stroke(); ctx.setLineDash([]);
   const by = pathY(RIVER_X);
   ctx.fillStyle = '#a0703a'; for (let i = 0; i < 9; i++) { rr(RIVER_X - 90 + i * 20, by - 44, 16, 88, 4); ctx.fill(); }
   ctx.fillStyle = '#6d4220'; ctx.fillRect(RIVER_X - 100, by - 50, 200, 8); ctx.fillRect(RIVER_X - 100, by + 42, 200, 8);
   for (const d of DECO) if (d.x > camX - 200 && d.x < camX + 1800) drawDeco(d);
   ctx.restore();
 }
+// ikonka zastávky s minihrou
+function drawStation(st, active) {
+  const { x, y } = st, bob = active ? -Math.abs(Math.sin(T * 4)) * 10 : 0;
+  ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(x, y + 46, 46, 11, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(x, y - 20 + bob);
+  ctx.fillStyle = '#8a5a30'; ctx.fillRect(-6, 10, 12, 50);
+  const col = { paint: '#ff9f1a', ears: '#ff8fc7', bubbles: '#5fd0ff' }[st.kind];
+  ctx.fillStyle = Save.stations[st.key] ? col : lighten(col, 0.35); ctx.beginPath(); ctx.arc(0, 0, 44, 0, 7); ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.stroke();
+  drawGameIcon(st.kind, 0, 0, 26);
+  if (Save.stations[st.key]) { ctx.fillStyle = '#ffd23f'; starPath(30, -30, 14, 6, 5); ctx.fill(); }
+  ctx.restore();
+}
+function drawGameIcon(kind, x, y, s) {
+  ctx.save(); ctx.translate(x, y);
+  if (kind === 'paint') { // paleta se štětcem
+    ctx.fillStyle = '#fff3d6'; ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.8, -0.3, 0, 7); ctx.fill();
+    for (const [dx, dy, c] of [[-0.5, -0.3, '#ff4d6d'], [0, -0.5, '#ffd23f'], [0.5, -0.2, '#3fa9f5'], [0.4, 0.35, '#4cd964']]) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(dx * s, dy * s, s * 0.2, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#c98a5a'; ctx.beginPath(); ctx.arc(-s * 0.35, s * 0.35, s * 0.18, 0, 7); ctx.fill();
+  } else if (kind === 'ears') { // ouško a vatová tyčinka
+    ctx.fillStyle = '#ffc9b0'; ctx.beginPath(); ctx.ellipse(-s * 0.15, 0, s * 0.6, s * 0.85, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#d98a74'; ctx.lineWidth = s * 0.12; ctx.beginPath(); ctx.arc(-s * 0.1, -s * 0.1, s * 0.32, -2.2, 1.6); ctx.stroke();
+    ctx.save(); ctx.rotate(-0.7); ctx.fillStyle = '#fff'; ctx.fillRect(s * 0.1, -s * 0.06, s * 1.0, s * 0.12); ctx.beginPath(); ctx.ellipse(s * 0.1, 0, s * 0.2, s * 0.14, 0, 0, 7); ctx.ellipse(s * 1.1, 0, s * 0.2, s * 0.14, 0, 0, 7); ctx.fill(); ctx.restore();
+  } else { // bubliny
+    for (const [dx, dy, r] of [[-0.35, 0.2, 0.5], [0.4, -0.25, 0.42], [0.25, 0.5, 0.25]]) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(dx * s, dy * s, r * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = s * 0.1; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(dx * s - r * s * 0.35, dy * s - r * s * 0.35, r * s * 0.2, 0, 7); ctx.fill(); }
+  }
+  ctx.restore();
+}
 Scenes.map = {
   greeted: false,
   enter(arg) {
     Music.on = true; this.sel = -1; this.selT = 0; this.drag = null; this.vx = 0;
-    this.walk = null; this.allT = -1;
+    this.walk = null; this.allT = -1; this.choose = null; this.stSel = null;
     const cur = Math.min(Save.unlocked, CHARS.length - 1);
-    const from = arg && arg.walkFrom != null ? arg.walkFrom : null;
+    const from = arg && arg.walkFrom != null ? arg.walkFrom : null, res = arg && arg.resume;
     const allDone = Save.done.length >= CHARS.length;
-    if (from != null && from + 1 < CHARS.length) { this.walk = { from, to: from + 1, t: -0.6 }; this.camX = this.camFor(from); say(P.mapWalk); }
-    else {
+    if (res) { this.walk = { from: res.from, route: res.route, t: 0.5, t0: 0.5, dur: 3.2 }; this.camX = this.camAt(curvePt(segCurve(res.from, res.route), 0.5).x); }
+    else if (from != null && from + 1 < CHARS.length) {
+      this.camX = this.camFor(from);
+      if (FORKS[from]) { this.choose = { from, t: 0 }; if (firstTimes('fork', 3)) say(P.forkAsk); }
+      else this.walk = { from, route: 'main', t: -0.6, t0: 0, dur: 2.2 };
+    } else {
       this.camX = this.camFor(cur);
       if (from === CHARS.length - 1 && allDone) { this.allT = 0; sayName(G(P.mapAll)); confetti(120); Snd.fanfare(); }
-      else if (!this.greeted) setTimeout(() => { say('Ahoj, ' + prof().voc + '!'); say(P.hello, true); }, 600);
-      else sayName(P.mapAgain);
+      else if (!this.greeted) setTimeout(() => { say('Ahoj, ' + prof().voc + '!'); if (firstTimes('hello', 2)) say(P.hello, true); }, 600);
     }
     this.greeted = true;
     this.btns = [
@@ -132,22 +180,32 @@ Scenes.map = {
       { x: 270, y: 64, r: 42, color: '#ffffff', icon: 'none', fn: () => go('profile') }
     ];
   },
-  camFor(i) { return clamp(NODES[i].x - 800, 0, WW - VW); },
+  camAt(x) { return clamp(x - 800, 0, WW - VW); },
+  camFor(i) { return this.camAt(NODES[i].x); },
+  // rozcestník: dvě šipky s obrázkem zastávky
+  forkSigns() { const s = this.choose.from; return ['up', 'down'].map(r => { const p = curvePt(segCurve(s, r), 0.27); return { route: r, x: p.x + 10, y: clamp(p.y + (r === 'up' ? -55 : -5), 350, 620), kind: FORKS[s][r === 'up' ? 0 : 1] }; }); },
   tokenPos() {
-    const cur = Math.min(Save.unlocked, CHARS.length - 1);
-    if (this.walk) { const k = clamp(this.walk.t / 2.0, 0, 1), a = NODES[this.walk.from], b = NODES[this.walk.to]; return { x: lerp(a.x, b.x, easeInOut(k)) - 118, y: lerp(a.y, b.y, easeInOut(k)) - Math.abs(Math.sin(k * Math.PI * 7)) * 26 }; }
-    const n = NODES[Save.done.length >= CHARS.length ? CHARS.length - 1 : cur];
+    if (this.walk) { const w = this.walk, k = clamp(w.t, 0, 1), p = curvePt(segCurve(w.from, w.route), k); return { x: p.x - 10, y: p.y - (w.t > w.t0 && !w.stop ? Math.abs(Math.sin(k * Math.PI * 9)) * 22 : 0), walking: !w.stop }; }
+    if (this.choose) { const A = NODES[this.choose.from]; return { x: A.x - 118, y: A.y + 10 }; }
+    const cur = Math.min(Save.unlocked, CHARS.length - 1), n = NODES[Save.done.length >= CHARS.length ? CHARS.length - 1 : cur];
     return { x: n.x - 118, y: n.y + 10 };
   },
   update(dt) {
     if (this.walk) {
-      const w = this.walk; w.t += dt;
-      if (w.t > 0 && Math.floor(w.t * 3.5) !== Math.floor((w.t - dt) * 3.5) && w.t < 2) Snd.step();
-      this.camX = lerp(this.camX, this.camFor(w.t < 1 ? w.from : w.to), dt * 2.5);
-      if (w.t > 2.2) { this.walk = null; Snd.sparkle(); burst(NODES[w.to].x - this.camX, NODES[w.to].y - 60, 25, {}); say(CHARS[w.to].story); }
+      const w = this.walk, was = w.t;
+      if (!w.stop) w.t += dt / w.dur;
+      if (w.t > 0 && w.t < 1 && !w.stop && Math.floor(w.t * w.dur * 3.5) !== Math.floor(was * w.dur * 3.5)) Snd.step();
+      const p = curvePt(segCurve(w.from, w.route), clamp(w.t, 0, 1));
+      this.camX = lerp(this.camX, this.camAt(p.x), dt * 3);
+      // zastávka v půlce odbočky
+      if (w.route !== 'main' && was < 0.5 && w.t >= 0.5) { w.t = 0.5; w.stop = 0; const st = stationAt(w.from, w.route); Snd.sparkle(); burst(st.x - this.camX, st.y - 60, 20, {}); }
+      if (w.stop != null) { w.stop += dt; if (w.stop > 0.9) { const st = stationAt(w.from, w.route); go('game', { kind: st.kind, key: st.key, resume: { from: w.from, route: w.route } }); return; } }
+      if (w.t >= 1.08) { const to = w.from + 1; this.walk = null; Snd.sparkle(); burst(NODES[to].x - this.camX, NODES[to].y - 60, 25, {}); }
     } else if (!this.drag) { this.camX = clamp(this.camX + this.vx * dt, 0, WW - VW); this.vx *= Math.pow(0.05, dt); }
+    if (this.choose) { this.choose.t += dt; if (this.choose.t > 14 && T - lastSay > IDLE_REPEAT) say(P.forkAsk); }
+    if (this.stSel) { this.stSel.t += dt; if (this.stSel.t > 0.9) go('game', { kind: this.stSel.st.kind, key: this.stSel.st.key }); }
     if (this.sel >= 0) { this.selT += dt; if (this.selT > 1.6) go('level', this.sel); }
-    else if (sceneT > 15 && T - lastSay > 15) say(P.mapIdle);
+    else if (!this.choose && sceneT > 25 && T - lastSay > 30) say(P.mapIdle);
     if (this.allT >= 0) { this.allT += dt; if (Math.random() < dt * 1.5) confetti(30); }
   },
   draw() {
@@ -155,9 +213,10 @@ Scenes.map = {
     drawWorld(camX);
     ctx.save(); ctx.translate(-camX, 0);
     const cur = Math.min(Save.unlocked, CHARS.length - 1);
+    for (const st of STATIONS) if (st.x > camX - 100 && st.x < camX + VW + 100) drawStation(st, this.walk && this.walk.stop != null && stationAt(this.walk.from, this.walk.route).key === st.key || (this.stSel && this.stSel.st === st));
     NODES.forEach((n, i) => {
       if (n.x < camX - 150 || n.x > camX + VW + 150) return;
-      const c = CHARS[i], done = Save.done.indexOf(c.id) >= 0, locked = i > Save.unlocked || (this.walk && i === this.walk.to && this.walk.t < 2);
+      const c = CHARS[i], done = Save.done.indexOf(c.id) >= 0, locked = i > Save.unlocked || ((this.walk || this.choose) && i === (this.walk || this.choose).from + 1);
       const isCur = !locked && !done && i === cur, sel = this.sel === i;
       const bob = isCur || sel ? -Math.abs(Math.sin(T * (sel ? 9 : 3))) * (sel ? 30 : 12) : 0;
       ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(n.x, n.y + 70, 70, 16, 0, 0, 7); ctx.fill();
@@ -172,13 +231,23 @@ Scenes.map = {
       if (done) { drawCrown(n.x, n.y - 62, 54); ctx.fillStyle = '#4cd964'; ctx.beginPath(); ctx.arc(n.x + 55, n.y + 50, 22, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(n.x + 45, n.y + 50); ctx.lineTo(n.x + 53, n.y + 58); ctx.lineTo(n.x + 66, n.y + 42); ctx.stroke(); }
       ctx.restore();
     });
-    const tp = this.tokenPos();
-    drawChar(playerChar(), tp.x, tp.y - 40, 46, { mode: 'closed', blink: blinkVal(9) });
+    if (this.choose) for (const f of this.forkSigns()) { // šipky na rozcestí
+      const k = 1 + Math.sin(T * 5 + (f.route === 'up' ? 0 : 1.5)) * 0.07;
+      ctx.save(); ctx.translate(f.x, f.y); ctx.scale(k, k); ctx.rotate(f.route === 'up' ? -0.55 : 0.55);
+      ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#c98a00'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(-50, -26); ctx.lineTo(20, -26); ctx.lineTo(20, -50); ctx.lineTo(70, 0); ctx.lineTo(20, 50); ctx.lineTo(20, 26); ctx.lineTo(-50, 26); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.rotate(f.route === 'up' ? 0.55 : -0.55); drawGameIcon(f.kind, -8, 0, 22);
+      ctx.restore();
+    }
+    const tp = this.tokenPos(), pc = playerChar();
+    ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(tp.x, tp.y + 22, 38, 10, 0, 0, 7); ctx.fill();
+    drawChar(pc, tp.x, tp.y - 40, 46, { mode: tp.walking ? 'grin' : 'closed', blink: blinkVal(9), happy: tp.walking });
     drawBrush(tp.x + 38, tp.y + 6, -1.1, 0.28, 1);
-    if (!this.walk && this.sel < 0 && sceneT > 3 && Save.done.length < CHARS.length) { const n = NODES[cur]; drawHand(n.x + 20, n.y + 20, T, 0.9); }
+    if (this.choose && this.choose.t > 3) { const f = this.forkSigns()[Math.floor(T / 2.5) % 2]; drawHand(f.x + 20, f.y + 10, T, 0.9); }
+    else if (!this.walk && !this.choose && this.sel < 0 && sceneT > 3 && Save.done.length < CHARS.length) { const n = NODES[cur]; drawHand(n.x + 20, n.y + 20, T, 0.9); }
     ctx.restore();
     starBadge(30, 26, Save.done.length);
-    for (const b of this.btns) { if (b.icon === 'none') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); ctx.save(); ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 3, 0, 7); ctx.clip(); drawChar(playerChar(), b.x, b.y + 6, 34, { mode: 'closed', blink: blinkVal(4) }); ctx.restore(); ctx.strokeStyle = '#ff8fc7'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke(); } else drawBtn(b); }
+    for (const b of this.btns) { if (b.icon === 'none') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); ctx.save(); ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 3, 0, 7); ctx.clip(); drawChar(pc, b.x, b.y + 6, 34, { mode: 'closed', blink: blinkVal(4) }); ctx.restore(); ctx.strokeStyle = '#ff8fc7'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke(); } else drawBtn(b); }
   },
   down(x, y) {
     const b = hitBtn(this.btns, x, y); if (b) { Snd.tap(); b.fn(); return; }
@@ -192,63 +261,76 @@ Scenes.map = {
   up(x, y) {
     const d = this.drag; this.drag = null; if (!d || d.moved) return;
     this.vx = 0;
-    if (this.walk || this.sel >= 0) return;
+    if (this.walk || this.sel >= 0 || this.stSel) return;
     const wx = x + this.camX;
+    if (this.choose) { // výběr cestičky
+      for (const f of this.forkSigns()) if (dist(wx, y, f.x, f.y) < 90 || dist(wx, y, stationAt(this.choose.from, f.route).x, stationAt(this.choose.from, f.route).y) < 70) {
+        Snd.tap(); Snd.sparkle(); buzz(30); this.walk = { from: this.choose.from, route: f.route, t: 0, t0: 0, dur: 3.2 }; this.choose = null; return;
+      }
+      return;
+    }
+    for (const st of STATIONS) if (Save.stations[st.key] && dist(wx, y, st.x, st.y - 20) < 60) { Snd.tap(); Snd.sparkle(); this.stSel = { st, t: 0 }; return; }
     NODES.forEach((n, i) => {
       if (this.sel >= 0 || dist(wx, y, n.x, n.y) > 90) return;
-      if (i > Save.unlocked) { Snd.wrong(); buzz(60); say(P.mapLocked); return; }
-      this.sel = i; this.selT = 0; Snd.tap(); Snd.sparkle(); buzz(30); say(CHARS[i].story);
+      if (i > Save.unlocked) { Snd.wrong(); buzz(60); if (T - lastSay > 6) say(P.mapLocked); return; }
+      this.sel = i; this.selT = 0; Snd.tap(); Snd.sparkle(); buzz(30); if (Save.done.indexOf(CHARS[i].id) < 0 || firstTimes('story_' + i, 2)) say(CHARS[i].story);
       burst(n.x - this.camX, n.y - 60, 20, {});
     });
   }
 };
 
-// ===== KDO JSI? (avatar a jméno) =====
+// ===== KDO JSI? (postavička a jméno) =====
 Scenes.profile = {
   enter() {
-    this.phase = 'avatar'; this.sel = Save.profile ? Save.profile.av : -1; this.selT = 0; this.name = Save.profile ? [Save.profile.name, Save.profile.voc] : null;
-    Music.on = true; say(P.whoAreYou);
+    const p = Save.profile;
+    this.phase = 'avatar'; this.sel = p ? Math.max(0, AVATARS.findIndex(a => a.id === p.avId)) : -1; this.name = p ? [p.name, p.voc, p.g] : null;
+    Music.on = true; if (firstTimes('whoAreYou', 3)) say(P.whoAreYou);
   },
-  avPos(i) { return { x: 230 + i * 228, y: 400 }; },
+  avPos(i) { return { x: 200 + (i % 5) * 300, y: i < 5 ? 300 : 560 }; },
   nameBtns() {
-    const g = AVATARS[this.sel].g, list = NAMES[g].concat([['Jiné…', null]]);
-    return list.map((n, i) => ({ x: 560 + (i % 4) * 255, y: 70 + Math.floor(i / 4) * 92, w: 235, h: 76, n }));
+    const list = NAMES.f.map(n => [n[0], n[1], 'f']).concat(NAMES.m.map(n => [n[0], n[1], 'm'])).concat([['Jiné…', null, null]]);
+    return list.map((n, i) => ({ x: 575 + (i % 6) * 170, y: 52 + Math.floor(i / 6) * 76, w: 160, h: 64, n }));
   },
-  update(dt) { this.selT += dt; },
+  update(dt) {},
   draw() {
     bgBath('#ffe9f3');
     if (this.phase === 'avatar') {
-      drawToothChar(800, 130, 70, T);
-      AVATARS.forEach((a, i) => { const p = this.avPos(i), s = this.sel === i; const bob = s ? -Math.abs(Math.sin(T * 6)) * 20 : Math.sin(T * 2 + i) * 5; ctx.fillStyle = s ? '#fff6a0' : 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(p.x, p.y + bob, 108, 0, 7); ctx.fill(); drawChar(a, p.x, p.y + 8 + bob, 82, { mode: s ? 'grin' : 'closed', blink: blinkVal(i + 2), happy: s }); });
+      drawToothChar(800, 105, 56, T);
+      AVATARS.forEach((a, i) => { const p = this.avPos(i), s = this.sel === i; const bob = s ? -Math.abs(Math.sin(T * 6)) * 18 : Math.sin(T * 2 + i) * 5;
+        ctx.fillStyle = s ? '#fff6a0' : a.name ? 'rgba(255,240,200,.9)' : 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(p.x, p.y + bob, 104, 0, 7); ctx.fill();
+        if (a.name) { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 6; ctx.stroke(); }
+        ctx.save(); ctx.beginPath(); ctx.arc(p.x, p.y + bob, 102, 0, 7); ctx.clip(); drawChar(a, p.x, p.y + 14 + bob, 72, { mode: s ? 'grin' : 'closed', blink: blinkVal(i + 2), happy: s }); ctx.restore(); });
+      if (Save.profile) drawBtn({ x: 80, y: 640, r: 46, color: '#3fa9f5', icon: 'map' });
       return;
     }
     const a = AVATARS[this.sel];
-    drawChar(a, 250, 300, 150, { mode: 'grin', blink: blinkVal(3) });
-    if (this.name) { ctx.fillStyle = '#7a3a5a'; ctx.font = 'bold 54px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.name[0], 250, 520); }
+    drawChar(a, 250, 290, 140, { mode: 'grin', blink: blinkVal(3) });
+    if (this.name) { ctx.fillStyle = '#7a3a5a'; ctx.font = 'bold 50px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(this.name[0], 250, 500); }
     for (const b of this.nameBtns()) {
-      const on = this.name && b.n[0] === this.name[0];
-      ctx.fillStyle = on ? '#ff8fc7' : '#ffffff'; rr(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h, 24); ctx.fill();
-      ctx.fillStyle = on ? '#fff' : '#5a3a4a'; ctx.font = 'bold 34px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.n[0], b.x, b.y + 2);
+      const on = this.name && b.n[0] === this.name[0], f = b.n[2] === 'f';
+      ctx.fillStyle = on ? (f ? '#ff6fa8' : '#3fa9f5') : b.n[2] ? (f ? '#ffe3ef' : '#e2f2ff') : '#ffffff'; rr(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h, 22); ctx.fill();
+      ctx.fillStyle = on ? '#fff' : '#4a3a4a'; ctx.font = 'bold ' + (b.n[0].length > 8 ? 23 : 27) + 'px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(b.n[0], b.x, b.y + 2);
     }
     drawBtn({ x: 80, y: 640, r: 50, color: '#3fa9f5', icon: 'prev' });
     if (this.name) drawBtn({ x: 250, y: 640, r: 62, color: '#4cd964', icon: 'next', pulse: true });
   },
   down(x, y) {
     if (this.phase === 'avatar') {
-      AVATARS.forEach((a, i) => { const p = this.avPos(i); if (dist(x, y, p.x, p.y) < 110) { this.sel = i; Snd.tap(); Snd.sparkle(); burst(p.x, p.y - 80, 16, {}); say(P.thatsYou); setTimeout(() => { if (this.sel === i && this.phase === 'avatar') { this.phase = 'name'; if (this.name && !NAMES[a.g].some(n => n[0] === this.name[0])) this.name = null; say(P.nameAsk, true); } }, 1100); } });
+      if (Save.profile && dist(x, y, 80, 640) < 66) { Snd.tap(); go('map'); return; }
+      AVATARS.forEach((a, i) => { const p = this.avPos(i); if (dist(x, y, p.x, p.y) < 106) { this.sel = i; Snd.tap(); Snd.sparkle(); burst(p.x, p.y - 80, 16, {}); if (a.name) say(a.name + '!'); setTimeout(() => { if (this.sel === i && this.phase === 'avatar') { this.phase = 'name'; if (firstTimes('nameAsk', 3)) say(P.nameAsk, true); } }, 900); } });
       return;
     }
     if (dist(x, y, 80, 640) < 70) { Snd.tap(); this.phase = 'avatar'; return; }
     if (this.name && dist(x, y, 250, 640) < 80) {
       Snd.tap(); Snd.fanfare();
-      Save.profile = { g: AVATARS[this.sel].g, name: this.name[0], voc: this.name[1], av: this.sel }; Save.save();
+      Save.profile = { g: this.name[2] || AVATARS[this.sel].g, name: this.name[0], voc: this.name[1], avId: AVATARS[this.sel].id }; Save.save();
       Scenes.map.greeted = false; go('map'); return;
     }
     for (const b of this.nameBtns()) if (Math.abs(x - b.x) < b.w / 2 && Math.abs(y - b.y) < b.h / 2) {
       Snd.tap();
       if (b.n[1] == null) {
         let n = null; try { n = window.prompt('Jak se dítě jmenuje?', ''); } catch (e) {}
-        if (n && n.trim()) { let v = null; try { v = window.prompt('Jak ho/ji oslovovat? (5. pád, např. Aničko)', n.trim()); } catch (e) {} this.name = [n.trim(), (v || n).trim()]; say('Ahoj, ' + this.name[1] + '!'); }
+        if (n && n.trim()) { let v = null; try { v = window.prompt('Jak ho/ji oslovovat? (5. pád, např. Aničko)', n.trim()); } catch (e) {} let g = null; try { g = window.confirm('Je to holčička? (OK = holčička, Zrušit = kluk)') ? 'f' : 'm'; } catch (e) {} this.name = [n.trim(), (v || n).trim(), g]; say('Ahoj, ' + this.name[1] + '!'); }
       } else { this.name = b.n; say('Ahoj, ' + b.n[1] + '!'); }
     }
   }

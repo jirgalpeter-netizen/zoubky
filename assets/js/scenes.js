@@ -35,8 +35,8 @@ Scenes.together = {
       Reward.start(giveReward(null), [
         { x: 1290, y: 560, r: 62, color: '#ff9f1a', icon: 'again', delay: 0, fn: () => go('together') },
         { x: 1480, y: 560, r: 62, color: '#4cd964', icon: 'map', delay: 0.15, fn: () => go('map') }
-      ]);
-      sayName(G(P.togEnd));
+      ], 0.6);
+      sayName(G(P.togEnd), true);
     }
   },
   draw() {
@@ -76,7 +76,7 @@ Scenes.together = {
       }
       drawBtn({ x: 1530, y: 70, r: 44, color: '#ff9f1a', icon: 'skip' });
     }
-    if (done) Reward.draw();
+    if (done) { const f = full(); ctx.fillStyle = 'rgba(255,246,214,' + (0.8 * ease(Reward.t / 0.6)) + ')'; ctx.fillRect(f.x, f.y, f.w, f.h); Reward.draw(); }
     else drawBtn({ x: 70, y: 70, r: 44, color: '#3fa9f5', icon: 'map' });
   },
   down(x, y) {
@@ -93,7 +93,7 @@ Scenes.level = Lv;
 
 // ===== Vstup =====
 let ptrId = null, ptrScene = null;
-function toV(e) { const r = cvs.getBoundingClientRect(); return { x: ((e.clientX - r.left) * (cvs.width / r.width) - OX) / S, y: ((e.clientY - r.top) * (cvs.height / r.height) - OY) / S }; }
+function toV(e) { const lx = ROT ? e.clientY : e.clientX, ly = ROT ? SW - e.clientX : e.clientY; return { x: (lx * dpr - OX) / S, y: (ly * dpr - OY) / S }; }
 cvs.addEventListener('pointerdown', e => {
   e.preventDefault(); Snd.init();
   if (ptrId !== null) return;

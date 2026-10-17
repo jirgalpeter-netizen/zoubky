@@ -3,16 +3,40 @@
 const VW = 1600, VH = 720;
 const cvs = document.getElementById('c');
 let ctx = cvs.getContext('2d');
-let dpr = 1, S = 1, OX = 0, OY = 0;
+let dpr = 1, S = 1, OX = 0, OY = 0, ROT = false, SW = 0;
+// Bezpečné okraje (výřez kamery, ostrůvek, lišta): iPhone přes CSS env(), Android z obalu (window.setSafe)
+const safeProbe = document.createElement('div');
+safeProbe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+document.body.appendChild(safeProbe);
+let SAFE_NATIVE = [0, 0, 0, 0];
+try { if (window.Android && window.Android.safeInsets) SAFE_NATIVE = String(window.Android.safeInsets()).split(',').map(Number); } catch (e) {}
+window.setSafe = function (l, t, r, b) { SAFE_NATIVE = [l, t, r, b]; resize(); };
+function safeInsets() { // obrazovka (fyzicky): vlevo, nahoře, vpravo, dole
+  const cs = getComputedStyle(safeProbe), n = SAFE_NATIVE;
+  return [Math.max(parseFloat(cs.paddingLeft) || 0, n[0] || 0), Math.max(parseFloat(cs.paddingTop) || 0, n[1] || 0), Math.max(parseFloat(cs.paddingRight) || 0, n[2] || 0), Math.max(parseFloat(cs.paddingBottom) || 0, n[3] || 0)];
+}
 function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 4);
-  cvs.width = Math.round(innerWidth * dpr);
-  cvs.height = Math.round(innerHeight * dpr);
-  S = Math.min(cvs.width / VW, cvs.height / VH);
-  OX = (cvs.width - VW * S) / 2;
-  OY = (cvs.height - VH * S) / 2;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  // Telefon na výšku: hru otočíme, aby se nemusel vypínat zámek otáčení a nic se nezmenšilo
+  ROT = vh > vw * 1.05 && matchMedia('(pointer: coarse)').matches;
+  const W = ROT ? vh : vw, H = ROT ? vw : vh; SW = vw;
+  cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
+  cvs.style.transform = ROT ? 'translateX(' + vw + 'px) rotate(90deg)' : 'none';
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  if (W * H * dpr * dpr > 5.5e6) dpr = Math.sqrt(5.5e6 / (W * H)); // šetří paměť a baterii na velkých displejích
+  cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+  let [l, t, r, b] = safeInsets();
+  if (ROT) [l, t, r, b] = [t, r, b, l]; // otočeno o 90°: horní okraj obrazovky je levý okraj hry
+  // tlačítka nesmí pod výřez; malá rezerva od kraje, na plochém displeji 0
+  const L = l * dpr, R = r * dpr, Tp = t * dpr, B = Math.max(0, b - 8) * dpr;
+  const aw = cvs.width - L - R, ah = cvs.height - Tp - B;
+  S = Math.min(aw / VW, ah / VH);
+  OX = L + (aw - VW * S) / 2;
+  OY = Tp + (ah - VH * S) / 2;
 }
 addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 300));
+if (window.visualViewport) visualViewport.addEventListener('resize', resize);
 resize();
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -45,7 +69,10 @@ const Save = {
   profile: Store.get('profile', null),
   book: Store.get('book', null),
   togetherSec: Store.get('togetherSec', 120),
-  save() { for (const k of ['unlocked', 'done', 'inv', 'pages', 'music', 'togetherSec', 'brush', 'profile', 'book']) Store.set(k, this[k]); }
+  stations: Store.get('stations', {}),     // navštívené zastávky s minihrou
+  placed: Store.get('placed', null),        // nálepky nalepené na své místo v knížce
+  rewards: Store.get('rewards', 0),
+  save() { for (const k of ['unlocked', 'done', 'inv', 'pages', 'music', 'togetherSec', 'brush', 'profile', 'book', 'stations', 'placed', 'rewards']) Store.set(k, this[k]); }
 };
 if (!Save.inv) { // převod nálepek z verze 1
   Save.inv = {};
@@ -93,6 +120,12 @@ const Voice = {
   busy() { return !!this.cur || this.q.length > 0; }
 };
 function say(t, queue) { Voice.say(t, queue); }
+// Hra mluví málo: vysvětlí jen poprvé, napoví až když dítě dlouho neví, chválí jen občas
+const Seen = Store.get('seen', {});
+function firstTimes(k, n) { const c = Seen[k] || 0; if (c >= (n || 1)) return false; Seen[k] = c + 1; Store.set('seen', Seen); return true; }
+let lastPraise = -99;
+function praise(t, gap) { if (T - lastPraise < (gap || 30) || T - lastSay < 4) return false; lastPraise = T; say(t); return true; }
+const IDLE_HINT = 9, IDLE_REPEAT = 22; // za kolik sekund nečinnosti napovědět a jak často opakovat
 function buzz(ms) { try { if (window.Android && window.Android.vibrate) window.Android.vibrate(ms); else if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
 // ===== Zvuky (syntetizované) =====

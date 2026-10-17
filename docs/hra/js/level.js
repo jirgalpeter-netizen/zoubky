@@ -1,13 +1,14 @@
 'use strict';
 // ===== Hráč: jméno a rod =====
 const NAMES = {
-  f: [['Laurinka', 'Laurinko'], ['Anička', 'Aničko'], ['Eliška', 'Eliško'], ['Terezka', 'Terezko'], ['Natálka', 'Natálko'], ['Adélka', 'Adélko'], ['Sofinka', 'Sofinko'], ['Viktorka', 'Viktorko'], ['Kristýnka', 'Kristýnko'], ['Emička', 'Emičko'], ['Julinka', 'Julinko'], ['Barunka', 'Barunko'], ['Klárka', 'Klárko'], ['Lucinka', 'Lucinko'], ['Nelinka', 'Nelinko'], ['Zuzanka', 'Zuzanko'], ['Amálka', 'Amálko'], ['Rozárka', 'Rozárko']],
+  f: [['Laurinka', 'Laurinko'], ['Jasmínka', 'Jasmínko'], ['Anička', 'Aničko'], ['Eliška', 'Eliško'], ['Terezka', 'Terezko'], ['Natálka', 'Natálko'], ['Adélka', 'Adélko'], ['Sofinka', 'Sofinko'], ['Viktorka', 'Viktorko'], ['Kristýnka', 'Kristýnko'], ['Emička', 'Emičko'], ['Julinka', 'Julinko'], ['Barunka', 'Barunko'], ['Klárka', 'Klárko'], ['Lucinka', 'Lucinko'], ['Nelinka', 'Nelinko'], ['Zuzanka', 'Zuzanko'], ['Amálka', 'Amálko'], ['Rozárka', 'Rozárko']],
   m: [['Honzík', 'Honzíku'], ['Tomášek', 'Tomášku'], ['Matýsek', 'Matýsku'], ['Vojtíšek', 'Vojtíšku'], ['Adámek', 'Adámku'], ['Filípek', 'Filípku'], ['Kubík', 'Kubíku'], ['Ondrášek', 'Ondrášku'], ['Davídek', 'Davídku'], ['Lukášek', 'Lukášku'], ['Šimonek', 'Šimonku'], ['Toník', 'Toníku'], ['Vašík', 'Vašíku'], ['Kryštůfek', 'Kryštůfku'], ['Martínek', 'Martínku'], ['Péťa', 'Péťo'], ['Jiříček', 'Jiříčku'], ['Mikulášek', 'Mikulášku']]
 };
-function prof() { return Save.profile || { g: 'f', name: 'Laurinka', voc: 'Laurinko', av: 0 }; }
+function prof() { return Save.profile || { g: 'f', name: 'Laurinka', voc: 'Laurinko', avId: 'a1' }; }
+if (Save.profile && !Save.profile.avId) { Save.profile.avId = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'][Save.profile.av] || 'a1'; Save.save(); } // převod z verze 3.1
 function G(x) { return x && typeof x === 'object' && !Array.isArray(x) && x.f ? x[prof().g] : x; }
 function sayName(text, queue) { say(prof().voc + '!', queue); if (text) say(text, true); }
-function playerChar() { return AVATARS[prof().av] || AVATARS[0]; }
+function playerChar() { return AVATARS.find(a => a.id === prof().avId) || AVATARS[0]; }
 
 // ===== Věty hry (z nich se generuje nahraný hlas) =====
 const P = {
@@ -55,10 +56,10 @@ const P = {
   rinseRemind: 'Dones hrneček k pusince.',
   quiz: 'Co je pro zoubky zdravé? Ťukni na to.',
   quizRemind: 'Co je pro zoubky zdravé?',
-  wrong: 'Kdepak. Sladkosti zoubkům škodí. Zkus to jinak.',
+  wrong: 'Kdepak, sladkosti zoubkům škodí.',
   reward: c => 'Hurá! ' + c.name + ' má čisté zoubky! Tady máš nálepku.',
   remember: 'A nezapomeň: zoubky si čistíme ráno a večer!',
-  albumHello: 'Tady je tvoje knížka. Odlep nálepku dole, nalep ji do knížky a pořádně ji přitlač.',
+  albumHello: 'Každá nálepka má v knížce svoje místo. Najdi ho a nalep ji tam.',
   albumEmpty: 'Zatím tu nejsou nálepky. Vyčisti kamarádům zoubky a dostaneš je.',
   press: 'Teď ji pořádně přitlač prstíkem!',
   stuck: ['Drží!', 'Krásně přilepená!', 'Paráda!'],
@@ -66,8 +67,15 @@ const P = {
   togChoose: 'Jak dlouho budeme čistit? Vyber hodiny.',
   togStart: 'Čistíme zoubky spolu! Vezmi si svůj kartáček a čisti se mnou.',
   togQ: ['Nahoře na jedné straně. Drhni, drhni!', 'Teď nahoře na druhé straně.', 'A teď dole na jedné straně.', 'Dole na druhé straně. Už jen kousek!'],
-  togEnd: { f: 'Výborně! Vyčistila sis zoubky. Teď vypláchni pusu. Tady máš nálepku!', m: 'Výborně! Vyčistil sis zoubky. Teď vypláchni pusu. Tady máš nálepku!' },
+  togEnd: { f: 'Výborně! Vyčistila sis zoubky. Teď vypláchni pusu.', m: 'Výborně! Vyčistil sis zoubky. Teď vypláchni pusu.' },
   whoAreYou: 'Ahoj! Kdo jsi ty? Ťukni na sebe.',
+  forkAsk: 'Kudy půjdeme? Vyber cestičku.',
+  paint: 'Vyber barvičku a ťukni do obrázku.',
+  ears: 'Vyčisti oušku. Jemně, ať to nebolí!',
+  bubbles: 'Prasknou bubliny! Ťukej na ně.',
+  balloons: 'Vyber si balónek!',
+  hurray: ['Hurá!', 'Výborně!', 'Paráda!', 'Jsi šikula!'],
+  bonusSticker: 'Nálepka navíc!',
   thatsYou: 'To jsi ty? Super!',
   nameAsk: 'A jak se jmenuješ? Ať tě můžu oslovovat.'
 };
@@ -98,34 +106,86 @@ function lvlCfg(i) {
   };
 }
 
-// ===== Odměna =====
+// ===== Odměna: nálepky se musí vydělat =====
+function hasSticker(id) { return (Save.inv[id] || 0) > 0 || !!Save.placed[id]; }
+function unearnedItems() { return ITEM_STICKERS.filter(id => !hasSticker(id)); }
+function giveItem(prefer) { const left = unearnedItems(); if (!left.length) return null; const id = prefer && left.indexOf(prefer) >= 0 ? prefer : pick(left); Save.inv[id] = 1; Save.save(); return id; }
 function giveReward(c, extra) {
   const got = [];
-  if (c && Save.done.indexOf(c.id) < 0) { Save.done.push(c.id); got.push('c:' + c.id); }
-  got.push(pick(ITEM_STICKERS));
-  if (extra) got.push(...extra);
-  for (const id of got) Save.inv[id] = (Save.inv[id] || 0) + 1;
+  if (c && Save.done.indexOf(c.id) < 0) { Save.done.push(c.id); if (!hasSticker('c:' + c.id)) { Save.inv['c:' + c.id] = 1; got.push('c:' + c.id); } }
+  if (extra) for (const e of extra) { const id = giveItem(e); if (id) got.push(id); }
   if (c) Save.unlocked = Math.max(Save.unlocked, Math.min(CHARS.length - 1, c.idx + 1));
-  Save.save();
-  return got.slice(0, 3);
+  Save.rewards++; Save.save();
+  return got;
 }
+const BAL_COL = ['#ff4d6d', '#ffd23f', '#4cd964', '#3fa9f5', '#b06cff', '#ff9f1a'];
 const Reward = {
-  active: false, t: 0, ids: [], btns: [],
-  start(ids, btns) { this.active = true; this.t = 0; this.ids = ids; this.btns = btns; Snd.fanfare(); buzz(80); confetti(90); burst(800, 300, 40, { smin: 200, smax: 700, max: 20 }); },
-  update(dt) { if (!this.active) return; this.t += dt; if (this.t > 0.6 && this.t < 6 && Math.random() < dt * 1.2) confetti(25); },
+  active: false, t: 0, ids: [], btns: [], bal: [], popped: -1, popT: 0, bonus: null,
+  // chance = pravděpodobnost nálepky navíc v jednom z balónků
+  start(ids, btns, chance) {
+    this.active = true; this.t = 0; this.ids = ids; this.btns = btns; this.popped = -1; this.popT = 0;
+    const left = unearnedItems();
+    this.bonus = left.length && Math.random() < (chance == null ? 0.35 : chance) ? pick(left) : null;
+    const cols = shuffle(BAL_COL), n = 3, x0 = ids.length ? 640 : 520, gap = ids.length ? 210 : 260;
+    this.bal = Array.from({ length: n }, (_, i) => ({ x: x0 + i * gap, y: 370, c: cols[i], ph: rnd(0, 6), fly: 0, pop: -1 }));
+    Snd.fanfare(); buzz(80); confetti(90); burst(800, 300, 40, { smin: 200, smax: 700, max: 20 });
+    if (firstTimes('balloons', 2)) say(P.balloons, true); else praise(pick(P.hurray), 0);
+  },
+  update(dt) {
+    if (!this.active) return; this.t += dt;
+    if (this.t > 0.6 && this.t < 5 && Math.random() < dt * 1.0) confetti(20);
+    if (this.popped >= 0) { this.popT += dt; for (const b of this.bal) if (b.pop < 0 && b !== this.bal[this.popped]) b.fly += dt; }
+    else if (this.t > 14 && T - lastSay > IDLE_REPEAT) say(P.balloons);
+  },
+  balPos(b) { return { x: b.x + Math.sin(T * 1.3 + b.ph) * 14, y: b.y + Math.sin(T * 1.9 + b.ph) * 16 - b.fly * b.fly * 260 }; },
+  btnsReady() { return this.popped >= 0 ? this.popT > 1.4 : this.t > 16; },
   draw() {
     if (!this.active) return;
     const n = this.ids.length;
     this.ids.forEach((id, i) => {
-      const k = easeBack((this.t - i * 0.5) / 0.8), x = 250, y = n === 1 ? 330 : n === 2 ? 210 + i * 260 : 130 + i * 220, r = n === 1 ? 130 : n === 2 ? 105 : 90;
+      const k = easeBack((this.t - i * 0.5) / 0.8), x = 250, y = n === 1 ? 330 : 210 + i * 240, r = n === 1 ? 125 : 100;
       ctx.save(); ctx.translate(x, y); ctx.rotate(T * 0.4 + i); ctx.globalAlpha = 0.5 * ease((this.t - i * 0.5) / 0.5);
       for (let j = 0; j < 12; j++) { ctx.fillStyle = j % 2 ? '#fff6a0' : '#ffffff'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r * 1.8 * k, j * Math.PI / 6, (j + 0.5) * Math.PI / 6); ctx.closePath(); ctx.fill(); }
       ctx.restore();
       if (k > 0) drawSticker(id, x, y + Math.sin(T * 3 + i) * 8, r * k, Math.sin(T * 2 + i) * 0.1);
     });
-    for (const b of this.btns) { b.sc = easeBack((this.t - 1.2 - b.delay) / 0.5); if (b.sc > 0.01) drawBtn(b); }
+    this.bal.forEach((b, i) => {
+      const p = this.balPos(b), k = easeBack((this.t - 0.4 - i * 0.15) / 0.6);
+      if (b.pop >= 0) { // co bylo uvnitř
+        const q = ease(this.popT / 0.6);
+        if (this.bonus) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(T * 0.5); ctx.globalAlpha = 0.6; for (let j = 0; j < 12; j++) { ctx.fillStyle = j % 2 ? '#fff6a0' : '#ffffff'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 170 * q, j * Math.PI / 6, (j + 0.5) * Math.PI / 6); ctx.closePath(); ctx.fill(); } ctx.restore(); drawSticker(this.bonus, p.x, p.y + Math.sin(T * 3) * 6, 100 * easeBack(this.popT / 0.6), Math.sin(T * 2) * 0.1); }
+        else { ctx.fillStyle = '#ffcc00'; starPath(p.x, p.y, 70 * q, 32 * q, 5); ctx.fill(); ctx.strokeStyle = '#e69500'; ctx.lineWidth = 4; ctx.stroke(); }
+        return;
+      }
+      if (k <= 0 || p.y < -200) return;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(k, k);
+      ctx.strokeStyle = 'rgba(80,80,80,.6)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 95); ctx.quadraticCurveTo(Math.sin(T * 2 + b.ph) * 20, 160, 0, 230); ctx.stroke();
+      ctx.fillStyle = b.c; ctx.beginPath(); ctx.ellipse(0, 0, 78, 95, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-12, 100); ctx.lineTo(12, 100); ctx.lineTo(0, 88); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(-28, -36, 16, 28, -0.5, 0, 7); ctx.fill();
+      ctx.restore();
+    });
+    if (this.popped < 0 && this.t > 3) { const b = this.bal[Math.floor(T / 2) % this.bal.length], p = this.balPos(b); drawHand(p.x + 10, p.y + 30, T, 0.9); }
+    for (const b of this.btns) { b.sc = this.btnsReady() ? easeBack((this.popped >= 0 ? this.popT - 1.4 : this.t - 16) / 0.5 - b.delay) : 0; if (b.sc > 0.01) drawBtn(b); }
   },
-  down(x, y) { if (!this.active || this.t < 1.4) return false; const b = hitBtn(this.btns, x, y); if (b) { Snd.tap(); b.fn(); return true; } return false; }
+  down(x, y) {
+    if (!this.active || this.t < 0.8) return false;
+    if (this.popped < 0) {
+      for (let i = 0; i < this.bal.length; i++) {
+        const b = this.bal[i], p = this.balPos(b);
+        if (Math.abs(x - p.x) < 90 && y > p.y - 110 && y < p.y + 120) {
+          this.popped = i; b.pop = 0; this.popT = 0; Snd.pop(); Snd.noise(0.15, { f: 4000, vol: 0.4, ft: 'highpass' }); buzz(60);
+          burst(p.x, p.y, 40, { colors: [b.c, '#ffffff', '#ffd700'], smin: 200, smax: 700 });
+          if (this.bonus) { Save.inv[this.bonus] = 1; Save.save(); setTimeout(() => { Snd.sparkle(); Snd.fanfare(); }, 250); say(P.bonusSticker, true); }
+          else Snd.sparkle();
+          if (Save.rewards % 4 === 0) setTimeout(() => sayName(P.remember, true), 1800);
+          return true;
+        }
+      }
+    }
+    if (!this.btnsReady()) return false;
+    const b = hitBtn(this.btns, x, y); if (b) { Snd.tap(); b.fn(); return true; } return false;
+  }
 };
 
 // ===== Level =====
@@ -148,7 +208,6 @@ const Lv = {
     this.brushT = 0; this.waveN = 0; this.lastWave = null; this.waveWait = -1; this.bonus = [];
     this.lastProgT = 0; this.hintSaidT = 0; this.keepSaidT = 0; this.said = {}; this.sadT = 0; this.chewT = -1; this.quiz = null; this.snackFx = null;
     Music.on = false;
-    say(P.open(this.c), true);
   },
   addGerm(ti, o) { const g = Object.assign({ ti, u: rnd(0.35, 0.65), v: this.teeth[ti].upper ? 0.6 : 0.4, hp: 3, hit: 0, sq: 0, ph: rnd(0, 6), dead: false, r: 25, hops: 0, hopCd: 0, hop: null, face: null }, o); this.germs.push(g); return g; },
   addGaps(n) {
@@ -180,32 +239,32 @@ const Lv = {
     if (P_ === 'brush' || P_ === 'tongue') { b.sc = lerp(b.sc, BRUSH_SC, dt * 5); b.speed *= Math.pow(0.02, dt); scrubWant = b.held ? clamp(b.speed / 9000, 0, 0.16) : 0; }
     if (P_ === 'tongue') {
       this.tg.k = Math.min(1, this.tg.k + dt * 2);
-      if (this.tg.dirt < 0.05) { this.tg.dirt = 0; Snd.sparkle(); say(P.tongueDone); this.toClean(); }
-      else if (!b.held && T - this.lastProgT > 5 && T - this.hintSaidT > 10) { this.hintSaidT = T; say(P.tongue); }
+      if (this.tg.dirt < 0.05) { this.tg.dirt = 0; Snd.sparkle(); this.toClean(); }
+      else if (!b.held && T - this.lastProgT > IDLE_HINT && T - this.hintSaidT > IDLE_REPEAT) { this.hintSaidT = T; say(P.tongue); }
     }
     if (P_ === 'clean') {
       this.tg.k = Math.max(0, this.tg.k - dt * 2);
       for (const t of this.teeth) t.dirt *= Math.pow(0.02, dt);
       b.x = lerp(b.x, 1750, dt * 3);
-      if (this.pt > 1.3) { for (const t of this.teeth) t.dirt = 0; this.setPhase('rinse'); say(P.rinse, true); }
+      if (this.pt > 1.3) { for (const t of this.teeth) t.dirt = 0; this.setPhase('rinse'); if (firstTimes('rinse', 2)) say(P.rinse, true); }
     }
     if (P_ === 'rinse') this.updRinse(dt);
     if (P_ === 'quiz') {
       this.open = Math.max(0, this.open - dt * 3);
       this.sadT -= dt;
       if (this.chewT >= 0) { this.chewT += dt; if (this.chewT > 2.4) { this.setPhase('reward'); this.startReward(); } }
-      else if (this.pt > 9 && T - lastSay > 9) say(P.quizRemind);
+      else if (this.pt > 12 && T - lastSay > IDLE_REPEAT) say(P.quizRemind);
     }
     if (P_ === 'reward') Reward.update(dt);
     for (const f of this.foam) f.a = Math.min(1, f.a + dt * 4);
     if (this.snackFx) { this.snackFx.t += dt; if (this.snackFx.t > 1.2) this.snackFx = null; }
   },
   startBrushTalk() {
-    say(P.brush, true);
     const i = this.cfg.intro;
-    if (i.gaps) say(P.gapIntro, true);
-    if (i.tough) say(P.toughIntro, true);
-    if (i.hop) say(P.hopIntro, true);
+    if (firstTimes('brush', 2)) say(P.brush, true);
+    if (i.gaps && firstTimes('gapIntro')) say(P.gapIntro, true);
+    if (i.tough && firstTimes('toughIntro')) say(P.toughIntro, true);
+    if (i.hop && firstTimes('hopIntro')) say(P.hopIntro, true);
   },
   updBrush(dt) {
     const b = this.brush, m = this.mouthRect(this.open);
@@ -220,14 +279,14 @@ const Lv = {
         if (dist(b.x, b.y, p.x, p.y) < 150) {
           let ti = g.ti; for (let k = 0; k < 10 && ti === g.ti; k++) ti = rndi(0, this.teeth.length - 1);
           g.ti = ti; g.v = this.teeth[ti].upper ? 0.6 : 0.4; g.hops--; g.hopCd = 1.2; g.hop = { fx: p.x, fy: p.y, t: 0 };
-          Snd.hihi(); if (T - lastSay > 4) say(P.hop);
+          Snd.hihi();
         }
       }
     }
     const clear = this.boardClear();
     if (clear && this.brushT >= this.cfg.dur) {
       b.held = false; Snd.fanfare(); burst(FCX, FCY + 100, 40, { smin: 150, smax: 600 });
-      if (this.cfg.tongue) { this.setPhase('tongue'); say(P.tongue); this.lastProgT = T; }
+      if (this.cfg.tongue) { this.setPhase('tongue'); if (firstTimes('tongue', 2)) say(P.tongue); this.lastProgT = T; }
       else this.toClean();
       return;
     }
@@ -235,7 +294,7 @@ const Lv = {
       if (this.waveWait < 0) this.waveWait = 0.9;
       this.waveWait -= dt;
       if (this.waveWait <= 0) { this.waveWait = -1; this.spawnWave(); }
-    } else if (!b.held && T - this.lastProgT > 5 && T - this.hintSaidT > 10) {
+    } else if (!b.held && T - this.lastProgT > IDLE_HINT && T - this.hintSaidT > IDLE_REPEAT) {
       this.hintSaidT = T;
       say(this.gaps.some(g => !g.done) && Math.random() < 0.5 ? P.gapHint : this.germs.some(g => !g.dead) ? P.hintGerm : P.hintTooth);
     }
@@ -251,24 +310,23 @@ const Lv = {
     if (w === 'germs') {
       const cnt = 2 + Math.floor(this.ci / 4);
       for (let k = 0; k < cnt; k++) { const side = k % 2 ? 1 : -1; this.addGerm(rndi(0, n - 1), { c: GERMC[(k + this.waveN) % GERMC.length], hops: this.cfg.hops, hop: { fx: FCX + side * 700, fy: FCY + rnd(-100, 100), t: -k * 0.25 } }); }
-      Snd.hihi(); say(P.germsCome);
+      Snd.hihi();
     }
     if (w === 'snack') {
       this.snackFx = { t: 0, food: pick(['cake', 'choco', 'lolly', 'apple']) };
       setTimeout(() => { if (this.phase !== 'brush') return; Snd.munch(); shuffle([...this.teeth.keys()]).slice(0, Math.ceil(n * 0.6)).forEach(i => { this.teeth[i].dirt = 1; this.teeth[i].clean = false; }); }, 700);
-      say(P.snack(this.c));
     }
-    if (w === 'gaps') { this.addGaps(1 + (this.ci >= 8 ? 1 : 0)); say(P.gapIntro); }
-    if (w === 'tough') { this.makeTough(1 + Math.floor(this.ci / 8)); say(P.toughIntro); }
+    if (w === 'gaps') this.addGaps(1 + (this.ci >= 8 ? 1 : 0));
+    if (w === 'tough') this.makeTough(1 + Math.floor(this.ci / 8));
     if (w === 'jump') {
       const fi = rndi(0, FACE_SPOTS.length - 1), t = this.teeth[rndi(0, n - 1)];
       this.addGerm(0, { face: fi, c: pick(GERMC), hp: 3, hop: { fx: t.x + t.w / 2, fy: t.y + t.h / 2, t: 0 } });
-      Snd.hihi(); say(P.jump[FACE_SPOTS[fi].k]);
+      Snd.hihi(); if (firstTimes('jump')) say(P.jump[FACE_SPOTS[fi].k]);
     }
-    if (w === 'star') { const ti = rndi(0, n - 1); this.bonus.push({ ti, prog: 0, got: false }); Snd.sparkle(); say(P.starWave); }
-    if (w === 'boss') { this.said.boss = true; this.addGerm(rndi(0, n - 1), { c: ['#c86bff', '#7a2fb0'], r: 48, hp: 8, boss: true, hop: { fx: FCX, fy: -100, t: 0 } }); say(P.boss); }
+    if (w === 'star') { const ti = rndi(0, n - 1); this.bonus.push({ ti, prog: 0, got: false }); Snd.sparkle(); if (firstTimes('star')) say(P.starWave); }
+    if (w === 'boss') { this.said.boss = true; this.addGerm(rndi(0, n - 1), { c: ['#c86bff', '#7a2fb0'], r: 48, hp: 8, boss: true, hop: { fx: FCX, fy: -100, t: 0 } }); if (firstTimes('boss', 2)) say(P.boss); }
   },
-  toClean() { this.setPhase('clean'); say(P.cleanDone, true); },
+  toClean() { this.setPhase('clean'); },
   updRinse(dt) {
     const c = this.cup, m = this.mouthRect(this.open);
     if (c.pour >= 0) {
@@ -284,24 +342,24 @@ const Lv = {
       return;
     }
     if (!c.held) { c.x = lerp(c.x, c.rx, dt * 5); c.y = lerp(c.y, c.ry, dt * 5); }
-    else if (dist(c.x, c.y, FCX + 150, m.y) < 260 || (Math.abs(c.x - FCX) < 330 && c.y < m.y + m.h)) { c.held = false; c.pour = 0; Snd.splash(); buzz(40); say(P.rinseGo); }
-    if (this.pt > 9 && T - lastSay > 9 && !c.held) say(P.rinseRemind);
+    else if (dist(c.x, c.y, FCX + 150, m.y) < 260 || (Math.abs(c.x - FCX) < 330 && c.y < m.y + m.h)) { c.held = false; c.pour = 0; Snd.splash(); buzz(40); }
+    if (this.pt > 12 && T - lastSay > IDLE_REPEAT && !c.held) say(P.rinseRemind);
   },
   setupQuiz() {
     const good = pick(['apple', 'carrot', 'cheese']), bads = shuffle(['lolly', 'choco', 'soda', 'cake']);
     const ids = shuffle(this.cfg.quiz3 ? [good, bads[0], bads[1]] : [good, bads[0]]);
     const pos = this.cfg.quiz3 ? shuffle([[230, 230], [230, 560], [1370, 420]]) : [[250, 420], [1350, 420]];
     this.quiz = { r: this.cfg.quiz3 ? 115 : 150, items: ids.map((id, i) => ({ id, x: pos[i][0], y: pos[i][1], wob: 0, gone: false, fly: -1 })) };
-    say(P.quiz, true);
+    if (firstTimes('quiz', 2)) say(P.quiz, true);
   },
   startReward() {
+    const first = Save.done.indexOf(this.c.id) < 0;
     const got = giveReward(this.c, this.bonus.filter(b => b.got).length ? ['star'] : null);
-    this.firstTime = got.some(id => id.startsWith('c:'));
+    this.firstTime = first;
     Reward.start(got, [
       { x: 1400, y: 300, r: 92, color: '#4cd964', icon: 'map', delay: 0, pulse: true, fn: () => go('map', { walkFrom: this.firstTime ? this.ci : null }) },
       { x: 1400, y: 540, r: 62, color: '#ff9f1a', icon: 'again', delay: 0.15, fn: () => go('level', this.ci) }
-    ]);
-    say(P.reward(this.c)); sayName(P.remember, true);
+    ], this.firstTime ? 0.3 : 0.45);
   },
   hint() {
     const P_ = this.phase;
@@ -327,8 +385,8 @@ const Lv = {
     if (P_ === 'quiz' && this.quiz && this.chewT < 0) {
       for (const it of this.quiz.items) {
         if (it.gone || dist(x, y, it.x, it.y) > this.quiz.r + 20) continue;
-        if (FOOD[it.id].good) { it.fly = 0; this.chewT = 0; Snd.ding(); setTimeout(() => Snd.munch(), 450); buzz(40); burst(it.x, it.y, 25, {}); say(FOOD[it.id].yes); }
-        else { it.wob = 1; this.sadT = 1.6; Snd.wrong(); buzz(120); say(P.wrong); }
+        if (FOOD[it.id].good) { it.fly = 0; this.chewT = 0; Snd.ding(); setTimeout(() => Snd.munch(), 450); buzz(40); burst(it.x, it.y, 25, {}); praise(FOOD[it.id].yes, 20); }
+        else { it.wob = 1; this.sadT = 1.6; Snd.wrong(); buzz(120); if (T - lastSay > 6) say(P.wrong); }
       }
       return;
     }
@@ -357,14 +415,13 @@ const Lv = {
     }
     for (const bn of this.bonus) {
       if (bn.got) continue; const t = this.teeth[bn.ti];
-      if (Math.abs(b.x - (t.x + t.w / 2)) < 60 && Math.abs(b.y - (t.y + t.h / 2)) < 60) { bn.prog += d / 300; progressed = true; if (bn.prog >= 1) { bn.got = true; Snd.sparkle(); Snd.ding(); buzz(40); burst(t.x + t.w / 2, t.y + t.h / 2, 30, { colors: ['#ffd700', '#fff3a0'] }); say(P.starGot); } }
+      if (Math.abs(b.x - (t.x + t.w / 2)) < 60 && Math.abs(b.y - (t.y + t.h / 2)) < 60) { bn.prog += d / 300; progressed = true; if (bn.prog >= 1) { bn.got = true; Snd.sparkle(); Snd.ding(); buzz(40); burst(t.x + t.w / 2, t.y + t.h / 2, 30, { colors: ['#ffd700', '#fff3a0'] }); } }
     }
     for (const g of this.gaps) {
       if (g.done) continue; const p = this.gapPos(g);
       if (Math.abs(b.x - p.x) < 58 && Math.abs(b.y - p.y) < 80) {
         g.prog += (Math.abs(dy) + Math.abs(dx) * 0.25) / 260; progressed = true;
-        if (Math.abs(dx) > Math.abs(dy) * 2 && T - lastSay > 5) say(P.gapHint);
-        if (g.prog >= 1) { g.done = true; Snd.pop(); Snd.ding(); buzz(30); burst(p.x, p.y, 16, { colors: [FOODC[g.f] || '#fff', '#ffffff', '#ffd700'] }); if (this.gaps.every(q => q.done)) say(P.gapDone); }
+        if (g.prog >= 1) { g.done = true; Snd.pop(); Snd.ding(); buzz(30); burst(p.x, p.y, 16, { colors: [FOODC[g.f] || '#fff', '#ffffff', '#ffd700'] }); }
       }
     }
     for (const g of this.germs) {
@@ -373,13 +430,13 @@ const Lv = {
         g.hp--; g.hit = 0.22; g.sq = 1; progressed = true;
         if (g.hp <= 0) {
           g.dead = true; Snd.pop(); buzz(25); burst(p.x, p.y, g.boss ? 40 : 18, { colors: [g.c[0], '#ffffff', '#ffd700'] });
-          if (g.boss) { const fr = shuffle([...this.teeth.keys()]); for (let k = 0; k < 3; k++) this.addGerm(fr[k], { c: GERMC[k], hp: 2, hops: 1, hop: { fx: p.x, fy: p.y, t: 0 } }); say(P.bossSplit); }
-          else if (T - lastSay > 3) say(pick(P.praise));
+          if (g.boss) { const fr = shuffle([...this.teeth.keys()]); for (let k = 0; k < 3; k++) this.addGerm(fr[k], { c: GERMC[k], hp: 2, hops: 1, hop: { fx: p.x, fy: p.y, t: 0 } }); }
+          else praise(pick(P.praise), 35);
         } else Snd.boing();
       }
     }
     if (progressed) this.lastProgT = T;
-    else if (this.boardClear() && T - this.keepSaidT > 12 && T - lastSay > 6) { this.keepSaidT = T; say(pick(P.keep)); }
+    else if (this.boardClear() && T - this.keepSaidT > 40 && T - lastSay > 20) { this.keepSaidT = T; say(pick(P.keep)); }
     if (b.x > m.x && b.x < m.x + m.w && b.y > m.y && b.y < m.y + m.h) this.spawnFoam(b, d, 1);
   },
   spawnFoam(b, d, k) {
@@ -450,7 +507,7 @@ const Lv = {
         }
       }
     }
-    if (P_ === 'reward') Reward.draw();
+    if (P_ === 'reward') { const f = full(); ctx.fillStyle = 'rgba(255,246,214,' + (0.8 * ease(Reward.t / 0.6)) + ')'; ctx.fillRect(f.x, f.y, f.w, f.h); Reward.draw(); }
     const h = this.hint();
     if (h) { if (h.updown) drawUpDown(h.x + 70, h.y, T, 1); drawHand(h.x, h.y, h.still ? 0 : T, 1); }
     if (P_ !== 'reward') drawBtn({ x: 70, y: 70, r: 44, color: '#3fa9f5', icon: 'map' });

@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 SDK=${ANDROID_SDK:-/opt/android-sdk}; BT=$SDK/build-tools/36.0.0; PJ=$SDK/platforms/android-36/android.jar
 KS=${ZOUBKY_KEYSTORE:-/root/.android-keys/zoubky.jks}; KSPASS_FILE=${KS%.jks}.heslo
-VER_CODE=${VER_CODE:-5}; VER_NAME=${VER_NAME:-3.1}
+VER_CODE=${VER_CODE:-6}; VER_NAME=${VER_NAME:-3.2}
 rm -rf build; mkdir -p build/gen build/obj build/dex
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/app.unsigned.apk -I "$PJ" --manifest AndroidManifest.xml -A assets \

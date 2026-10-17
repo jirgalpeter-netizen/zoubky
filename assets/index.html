@@ -12,8 +12,9 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../ikony/apple-touch-icon.png">
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#7fd3ff;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-canvas{display:block;width:100vw;height:100vh;touch-action:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#7fd3ff;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body{position:fixed;inset:0}
+canvas{display:block;position:absolute;left:0;top:0;transform-origin:0 0;touch-action:none}
 </style>
 </head>
 <body>
@@ -26,6 +27,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <script src="js/prep.js"></script>
 <script src="js/map.js"></script>
 <script src="js/album.js"></script>
+<script src="js/games.js"></script>
 <script src="js/scenes.js"></script>
 <script src="js/web.js"></script>
 </body>

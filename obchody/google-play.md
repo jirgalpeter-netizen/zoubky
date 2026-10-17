@@ -1,6 +1,6 @@
 # Zoubky – Google Play (podklady k vyplnění)
 
-Balíček: `cz.petr.zoubky` · soubor k nahrání: **Zoubky.aab** (verze 3.1, kód 5, cíl Android 16) · podpisový (upload) klíč je na VPS v `/root/.android-keys/zoubky.jks` – nemazat, každá další verze se musí podepsat stejným.
+Balíček: `cz.petr.zoubky` · soubor k nahrání: **Zoubky.aab** (verze 3.2, kód 6, cíl Android 16) · podpisový (upload) klíč je na VPS v `/root/.android-keys/zoubky.jks` – nemazat, každá další verze se musí podepsat stejným.
 
 ## Postup
 1. Účet vývojáře: https://play.google.com/console/signup – **osobní účet**, poplatek 25 USD jednorázově, ověření totožnosti (občanka) trvá obvykle 1–3 dny.
@@ -16,14 +16,15 @@ Balíček: `cz.petr.zoubky` · soubor k nahrání: **Zoubky.aab** (verze 3.1, k�
 
 Zoubky jsou veselá naučná hra pro děti od 3 let. Dítě putuje Zoubkovou zemí a pomáhá kamarádům – bobrovi, kočičce, medvídkovi, Karkulce, vlkovi, Mařence a Jeníčkovi, Kocourovi v botách i dráčkovi z hradu – vyčistit zoubky.
 
-🪥 Minihry s pastou: vybrat kartáček, odšroubovat víčko, vymačkat pastu a zase zavřít.
-🦠 Bacilové utíkají, skáčou na nos a schovávají se mezi zuby – kartáčkem nahoru a dolů!
-⏱️ Čištění se postupně prodlužuje až na doporučené 2–3 minuty.
-💧 Vypláchnutí pusy, kvíz o zdravém jídle a odměny.
-⭐ Knížka nálepek – nálepku je potřeba odlepit, nalepit a pořádně přitlačit.
+🧒 Vyber si, kdo jsi: holčička, kluk, Popelka, zelený obr Bažiňák nebo pejsek pilotka Pírko.
+🗺️ Cestičky s odbočkami – na rozcestí si vybereš, kudy půjdeš.
+🪥 Pasta, kartáček a bacilové, kteří utíkají a skáčou na nos. Čištění se postupně prodlužuje až na 2–3 minuty.
+🎨 Minihry na cestě: malování, čištění oušek a bubliny.
+🎈 Na konci si vybereš balónek – v některém je nálepka navíc.
+⭐ Knížka nálepek – každá nálepka má své místo, nalepit a pořádně přitlačit.
 👨‍👩‍👧 Režim Čistíme spolu: 30 s až 3 minuty skutečného čištění s rodičem.
 
-Hra je celá v češtině, nevyžaduje čtení – provází ji hlas a ukazující ručička. Bez reklam, bez nákupů, nesbírá žádná data a funguje bez internetu.
+Hra je celá v češtině, nevyžaduje čtení – ukazuje ručička a hlas se ozve, jen když dítě neví, co dál. Bez reklam, bez nákupů, nesbírá žádná data a funguje bez internetu.
 
 - **Kategorie:** Vzdělávání (tagy: Děti, Vzdělávání, Zdraví)
 - **Kontaktní e-mail:** doplní Petr · **Web:** https://jirgalpeter-netizen.github.io/zoubky/

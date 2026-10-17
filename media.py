@@ -26,17 +26,17 @@ FEATURE_JS = """() => { const orig = ctx; const c = document.createElement('canv
  const url = c.toDataURL('image/png'); ctx = orig; return url; }"""
 
 SCENES = {
- 'ukazka-1': "Save.profile={g:'f',name:'Laurinka',voc:'Laurinko',av:0};Save.unlocked=6;Save.done=['bobr','kocka','medved','pes','kun','zajic'];go('map');Scenes.map.camX=900;Scenes.map.greeted=true",
- 'ukazka-2': "go('level',4);",
+ 'ukazka-1': "Save.profile={g:'f',name:'Laurinka',voc:'Laurinko',avId:'popelka'};Save.unlocked=4;Save.done=['bobr','kocka','medved','pes'];Save.stations={'1u':true,'3d':true};go('map',{walkFrom:3});Scenes.map.camX=1300",
+ 'ukazka-2': "Save.unlocked=3;go('game',{kind:'paint'});",
  'ukazka-3': "go('level',8);",
- 'ukazka-4': "Save.book[0]={bg:0,st:[{id:'c:bobr',x:420,y:200,rot:-.1,stuck:true},{id:'rainbow',x:760,y:150,rot:.1,stuck:true},{id:'c:drak',x:1080,y:330,rot:.15,stuck:true},{id:'star',x:640,y:420,rot:0,stuck:true},{id:'c:karkulka',x:330,y:430,rot:.2,stuck:true}]};Save.inv={'c:kocka':1,'heart':2,'rocket':1,'flower':1,'c:pes':1,'sun':1};go('album')",
+ 'ukazka-4': "Save.placed={'sun':true,'rainbow':true,'butterfly':true,'strawberry':true};Save.inv={'flower':1,'c:kocka':1,'c:pes':1,'heart':1};go('album')",
  'ukazka-5': "go('level',12);",
 }
 async def prep_scene(pg, name):
     if name == 'ukazka-2':
-        await pg.wait_for_timeout(2600)
-        await pg.evaluate("Prep.steps=['unscrew','bring'];Prep.i=-1;Prep.tube.cap='on';Prep.next();Prep.tube.spin=1.2;Prep.tube.out=.4")
-        await pg.wait_for_timeout(1500)
+        await pg.wait_for_timeout(900)
+        await pg.evaluate("MINI.paint.regs.forEach((g,i)=>{if(i%3!==2){g.fill=PAINT_COLS[(i*2)%PAINT_COLS.length];g.k=1}});MINI.paint.col=4")
+        await pg.wait_for_timeout(400)
     elif name == 'ukazka-3':
         await pg.wait_for_timeout(2000)
         await pg.evaluate("""Lv.setPhase('brush');Lv.veil=0;Lv.teeth.forEach((t,i)=>{if(i%3)t.dirt=.15});Lv.addGerm(0,{face:0,c:GERMC[1]});
@@ -45,8 +45,10 @@ async def prep_scene(pg, name):
         await pg.wait_for_timeout(700)
     elif name == 'ukazka-5':
         await pg.wait_for_timeout(1500)
-        await pg.evaluate("Lv.setPhase('reward');Lv.startReward()")
-        await pg.wait_for_timeout(2600)
+        await pg.evaluate("Save.done=[];Lv.setPhase('reward');Lv.startReward();Reward.bonus='rocket'")
+        await pg.wait_for_timeout(1300)
+        await pg.evaluate("const q=Reward.balPos(Reward.bal[1]);Reward.down(q.x,q.y)")
+        await pg.wait_for_timeout(1300)
     else:
         await pg.wait_for_timeout(1800)
 

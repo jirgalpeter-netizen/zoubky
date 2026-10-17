@@ -44,12 +44,19 @@ const CHARS = [
 ];
 // hráč (avatar) – vybírá se na začátku
 const AVATARS = [
+  // holčičky
   { id: 'a1', g: 'f', human: true, skin: '#ffe0cc', hair: '#f2c35a', hairStyle: 'long', bow: '#b06cff', teeth: 'human', lashes: true },
   { id: 'a2', g: 'f', human: true, skin: '#f6cfb2', hair: '#6b3a1e', hairStyle: 'pigtails', bow: '#4cd964', teeth: 'human', lashes: true },
   { id: 'a3', g: 'f', human: true, skin: '#ffd9c2', hair: '#c0501e', hairStyle: 'braids', bow: '#3fa9f5', teeth: 'human', lashes: true },
+  { id: 'a7', g: 'f', human: true, skin: '#e9b896', hair: '#2a1a12', hairStyle: 'curly', bow: '#ff5fa2', teeth: 'human', lashes: true },
+  // pohádkové postavičky (vlastní, bez cizích značek)
+  { id: 'popelka', g: 'f', name: 'Popelka', human: true, skin: '#ffe6d8', hair: '#f6d36b', hairStyle: 'bun', band: '#5fb4ff', teeth: 'human', lashes: true },
+  // kluci
   { id: 'a4', g: 'm', human: true, skin: '#ffdcc4', hair: '#f2c35a', hairStyle: 'short', teeth: 'human' },
   { id: 'a5', g: 'm', human: true, skin: '#f6cfb2', hair: '#3b2a1e', hairStyle: 'short', cap: '#e8332b', teeth: 'human' },
-  { id: 'a6', g: 'm', human: true, skin: '#e9b896', hair: '#1e1a18', hairStyle: 'short', teeth: 'human' }
+  { id: 'a6', g: 'm', human: true, skin: '#e9b896', hair: '#1e1a18', hairStyle: 'short', teeth: 'human' },
+  { id: 'bazinak', g: 'm', name: 'Bažiňák', fur: '#9cc94a', fur2: '#6b8f2c', muz: '#b9dc72', inner: '#7a9e34', nose: '#6b8f2c', ear: 'ogre', teeth: 'human', ogre: true },
+  { id: 'pirko', g: 'f', name: 'Pírko', fur: '#ffd6e4', fur2: '#f08db2', muz: '#fff3f7', inner: '#f08db2', nose: '#7a3550', ear: 'dog', teeth: 'bear', pilot: true, lashes: true }
 ];
 const CHAR_BY = {}; CHARS.forEach((c, i) => { c.idx = i; CHAR_BY[c.id] = c; });
 
@@ -69,6 +76,9 @@ function drawBackLayer(c, cx, cy, R) {
     if (c.hairStyle === 'braids') for (const s of [-1, 1]) { for (let k = 0; k < 5; k++) { ctx.fillStyle = k % 2 ? darken(c.hair, 0.12) : c.hair; ctx.beginPath(); ctx.ellipse(cx + s * R * (0.88 + k * 0.02), cy + R * (0.05 + k * 0.24), R * 0.17, R * 0.15, 0, 0, 7); ctx.fill(); } ctx.fillStyle = c.bow || '#e8332b'; ctx.beginPath(); ctx.arc(cx + s * R * 0.98, cy + R * 1.2, R * 0.09, 0, 7); ctx.fill(); }
     ctx.fillStyle = c.hair;
     if (c.hairStyle === 'long') { rr(cx - R * 1.05, cy - R * 0.7, R * 2.1, R * 1.65, R * 0.5); ctx.fill(); }
+    if (c.hairStyle === 'curly') for (let k = 0; k < 16; k++) { const a = Math.PI * (0.95 + k / 15 * 1.1) + (k % 2 ? 0.05 : -0.05), q = R * (k % 2 ? 1.02 : 1.1); ctx.fillStyle = k % 3 ? c.hair : lighten(c.hair, 0.12); ctx.beginPath(); ctx.arc(cx + Math.cos(a) * q, cy - R * 0.05 + Math.sin(a) * q * 0.95, R * 0.26, 0, 7); ctx.fill(); }
+    if (c.hairStyle === 'curly') for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { ctx.fillStyle = c.hair; ctx.beginPath(); ctx.arc(cx + s * R * (1.0 + k * 0.03), cy + R * (0.1 + k * 0.28), R * 0.22, 0, 7); ctx.fill(); }
+    if (c.hairStyle === 'bun') { ctx.beginPath(); ctx.arc(cx, cy - R * 1.08, R * 0.34, 0, 7); ctx.fill(); ctx.fillStyle = darken(c.hair, 0.1); ctx.beginPath(); ctx.arc(cx + R * 0.08, cy - R * 1.12, R * 0.16, 0, 7); ctx.fill(); ctx.fillStyle = c.hair; }
     if (c.hairStyle === 'pigtails') for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(cx + s * R * 1.08, cy + R * 0.05, R * 0.25, R * 0.45, s * 0.3, 0, 7); ctx.fill(); }
     ctx.fillStyle = c.skin; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * R * 0.92, cy + R * 0.02, R * 0.14, 0, 7); ctx.fill(); }
     return;
@@ -103,6 +113,10 @@ function drawBackLayer(c, cx, cy, R) {
       const big = c.ear === 'big', er = big ? R * 0.3 : R * 0.17, ex = cx + s * R * (big ? 0.68 : 0.7), ey = cy - R * 0.7;
       ctx.fillStyle = c.fur; ctx.beginPath(); ctx.arc(ex, ey, er, 0, 7); ctx.fill(); ctx.stroke();
       ctx.fillStyle = c.inner; ctx.beginPath(); ctx.arc(ex + s * er * 0.05, ey + er * 0.08, er * 0.55, 0, 7); ctx.fill();
+    } else if (c.ear === 'ogre') {
+      ctx.fillStyle = c.fur; ctx.save(); ctx.translate(cx + s * R * 0.9, cy - R * 0.25); ctx.scale(s, 1); ctx.rotate(-0.35);
+      rr(-R * 0.1, -R * 0.08, R * 0.38, R * 0.16, R * 0.06); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = c.inner; ctx.beginPath(); ctx.ellipse(R * 0.28, 0, R * 0.06, R * 0.12, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
     } else if (c.ear === 'monkey') {
       ctx.fillStyle = c.fur; ctx.beginPath(); ctx.arc(cx + s * R * 0.95, cy - R * 0.05, R * 0.26, 0, 7); ctx.fill(); ctx.stroke();
       ctx.fillStyle = c.inner; ctx.beginPath(); ctx.arc(cx + s * R * 0.97, cy - R * 0.05, R * 0.16, 0, 7); ctx.fill();
@@ -118,6 +132,14 @@ function drawFrontLayer(c, cx, cy, R, open) {
     ctx.fillStyle = '#5a2f15'; ctx.beginPath(); ctx.ellipse(cx, cy - R * 0.8, R * 1.05, R * 0.2, -0.08, 0, 7); ctx.fill();
   }
   if (c.tiara) drawCrown(cx, cy - R * 0.86, R * 0.58);
+  if (c.band) { ctx.strokeStyle = c.band; ctx.lineWidth = R * 0.1; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(cx, cy + R * 0.05, R * 0.98, Math.PI * 1.17, Math.PI * 1.83); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx + R * 0.35, cy - R * 0.87, R * 0.07, 0, 7); ctx.fill(); }
+  if (c.ogre) { ctx.strokeStyle = c.fur2; ctx.lineWidth = R * 0.07; ctx.lineCap = 'round'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * R * 0.12, cy - R * 0.5); ctx.lineTo(cx + s * R * 0.5, cy - R * 0.58); ctx.stroke(); } }
+  if (c.pilot) {
+    ctx.fillStyle = '#ff7fb0'; ctx.beginPath(); ctx.ellipse(cx, cy - R * 0.5, R * 0.92, R * 0.55, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#e85d97'; ctx.fillRect(cx - R * 0.92, cy - R * 0.56, R * 1.84, R * 0.1);
+    for (const s of [-1, 1]) { ctx.fillStyle = '#c8d3dc'; ctx.beginPath(); ctx.arc(cx + s * R * 0.3, cy - R * 0.72, R * 0.2, 0, 7); ctx.fill(); ctx.fillStyle = '#9fe3ff'; ctx.beginPath(); ctx.arc(cx + s * R * 0.3, cy - R * 0.72, R * 0.14, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(cx + s * R * 0.3 - R * 0.05, cy - R * 0.77, R * 0.04, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#ffd23f'; starPath(cx, cy - R * 0.92, R * 0.1, R * 0.045, 5); ctx.fill();
+  }
   if (c.cap) {
     ctx.fillStyle = c.cap; ctx.beginPath(); ctx.ellipse(cx, cy - R * 0.55, R * 0.97, R * 0.5, 0, Math.PI, 0); ctx.fill();
     ctx.fillStyle = darken(c.cap, 0.2); ctx.beginPath(); ctx.ellipse(cx + R * 0.45, cy - R * 0.55, R * 0.55, R * 0.12, 0.05, 0, 7); ctx.fill();

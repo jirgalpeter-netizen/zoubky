@@ -20,6 +20,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private String pending = null;
+    private volatile String safe = "0,0,0,0";
 
     @Override
     protected void onCreate(Bundle b) {
@@ -33,6 +34,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         web = new WebView(this);
         web.setBackgroundColor(0xFF7FD3FF);
         setContentView(web);
+        // Výřez displeje (kamera) – hra si podle něj odsadí tlačítka
+        web.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            public android.view.WindowInsets onApplyWindowInsets(View v, android.view.WindowInsets in) {
+                if (Build.VERSION.SDK_INT >= 28 && in.getDisplayCutout() != null) {
+                    android.view.DisplayCutout c = in.getDisplayCutout();
+                    float d = getResources().getDisplayMetrics().density;
+                    safe = Math.round(c.getSafeInsetLeft() / d) + "," + Math.round(c.getSafeInsetTop() / d) + ","
+                        + Math.round(c.getSafeInsetRight() / d) + "," + Math.round(c.getSafeInsetBottom() / d);
+                    final String js = "window.setSafe&&window.setSafe(" + safe + ")";
+                    web.post(new Runnable() { public void run() { web.evaluateJavascript(js, null); } });
+                }
+                return v.onApplyWindowInsets(in);
+            }
+        });
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -87,6 +102,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     class Bridge {
+        @JavascriptInterface public String safeInsets() { return safe; }
         @JavascriptInterface
         public void speak(final String text, final boolean queue) {
             runOnUiThread(new Runnable() { public void run() { MainActivity.this.speak(text, queue); } });
