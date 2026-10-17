@@ -2,13 +2,13 @@
 # Sestaví a podepíše Zoubky.apk bez Gradlu (aapt2 + javac + d8 + apksigner).
 set -euo pipefail
 cd "$(dirname "$0")"
-SDK=${ANDROID_SDK:-/opt/android-sdk}; BT=$SDK/build-tools/35.0.0; PJ=$SDK/platforms/android-35/android.jar
+SDK=${ANDROID_SDK:-/opt/android-sdk}; BT=$SDK/build-tools/36.0.0; PJ=$SDK/platforms/android-36/android.jar
 KS=${ZOUBKY_KEYSTORE:-/root/.android-keys/zoubky.jks}; KSPASS_FILE=${KS%.jks}.heslo
-VER_CODE=${VER_CODE:-2}; VER_NAME=${VER_NAME:-1.1}
+VER_CODE=${VER_CODE:-5}; VER_NAME=${VER_NAME:-3.1}
 rm -rf build; mkdir -p build/gen build/obj build/dex
 "$BT/aapt2" compile --dir res -o build/res.zip
 "$BT/aapt2" link -o build/app.unsigned.apk -I "$PJ" --manifest AndroidManifest.xml -A assets \
-  --java build/gen build/res.zip --min-sdk-version 24 --target-sdk-version 35 \
+  --java build/gen build/res.zip --min-sdk-version 24 --target-sdk-version 36 \
   --version-code "$VER_CODE" --version-name "$VER_NAME"
 javac -nowarn -source 8 -target 8 -bootclasspath "$PJ" -d build/obj $(find src build/gen -name '*.java') 2>&1 | grep -v 'warning' || true
 "$BT/d8" --min-api 24 --lib "$PJ" --output build/dex $(find build/obj -name '*.class')
@@ -21,3 +21,15 @@ if [ ! -f "$KS" ]; then
 fi
 "$BT/apksigner" sign --ks "$KS" --ks-key-alias zoubky --ks-pass "pass:$(head -1 "$KSPASS_FILE")" --key-pass "pass:$(head -1 "$KSPASS_FILE")" --out Zoubky.apk build/app.aligned.apk
 "$BT/apksigner" verify Zoubky.apk && ls -la Zoubky.apk
+
+# Balíček pro Google Play (AAB) – stejný kód, proto formát zdrojů + bundletool
+BTOOL=${BUNDLETOOL:-/opt/bundletool/bundletool.jar}
+"$BT/aapt2" link --proto-format -o build/proto.apk -I "$PJ" --manifest AndroidManifest.xml -A assets build/res.zip \
+  --min-sdk-version 24 --target-sdk-version 36 --version-code "$VER_CODE" --version-name "$VER_NAME"
+rm -rf build/base && mkdir -p build/base/manifest build/base/dex && (cd build/base && unzip -q ../proto.apk)
+mv build/base/AndroidManifest.xml build/base/manifest/ && cp build/dex/classes.dex build/base/dex/
+(cd build/base && zip -q -r ../base.zip .)
+rm -f build/app.aab && java -jar "$BTOOL" build-bundle --modules=build/base.zip --output=build/app.aab
+cp build/app.aab Zoubky.aab
+jarsigner -keystore "$KS" -storepass "$(head -1 "$KSPASS_FILE")" -keypass "$(head -1 "$KSPASS_FILE")" -sigalg SHA256withRSA -digestalg SHA-256 Zoubky.aab zoubky >/dev/null
+ls -la Zoubky.aab

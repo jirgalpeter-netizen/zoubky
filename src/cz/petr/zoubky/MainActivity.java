@@ -41,6 +41,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         web.setWebChromeClient(new WebChromeClient());
         web.addJavascriptInterface(new Bridge(), "Android");
         tts = new TextToSpeech(this, this);
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                new android.window.OnBackInvokedCallback() { public void onBackInvoked() { handleBack(); } });
+        }
         web.loadUrl("file:///android_asset/index.html");
         hideBars();
     }
@@ -106,10 +110,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     @Override
-    public void onBackPressed() {
+    public void onBackPressed() { handleBack(); }
+
+    private void handleBack() {
         web.evaluateJavascript("(window.onBack&&window.onBack())?'1':'0'", new android.webkit.ValueCallback<String>() {
             public void onReceiveValue(String v) {
-                if (v == null || !v.contains("1")) MainActivity.super.onBackPressed();
+                if (v == null || !v.contains("1")) finish();
             }
         });
     }

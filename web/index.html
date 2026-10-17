@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Zoubky – hra o čištění zubů</title>
+<meta name="description" content="Naučná hra pro děti od 3 let: vyčisti zoubky bobrovi, kočičce, Karkulce i dráčkovi. Bez reklam, bez sběru dat, funguje i offline.">
+<meta name="theme-color" content="#3fa9f5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="ikony/icon-192.png">
+<link rel="apple-touch-icon" href="ikony/apple-touch-icon.png">
+<meta property="og:title" content="Zoubky – hra o čištění zubů">
+<meta property="og:description" content="Naučná hra pro děti od 3 let. Bez reklam, zdarma.">
+<meta property="og:image" content="obrazky/ukazka-1.png">
+<style>
+:root{--bg:#eaf7ff;--card:#fff;--ink:#23384d;--muted:#5b6f82;--pri:#4cd964;--pri2:#2fb84f;--blue:#3fa9f5;--pink:#ff6fa8;--line:#d6e9f5}
+@media (prefers-color-scheme:dark){:root{--bg:#10202e;--card:#182c3d;--ink:#eaf4fb;--muted:#a9bccb;--line:#28435a}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:0 16px 48px}
+header{background:linear-gradient(160deg,#6ccdfc,#3fa9f5 60%,#b06cff);color:#fff;padding:28px 16px 64px;text-align:center;border-radius:0 0 36px 36px}
+header img.ico{width:112px;height:112px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.25))}
+h1{font-size:44px;margin:8px 0 4px;letter-spacing:.5px}
+header p{margin:0 auto;max-width:560px;font-size:19px;opacity:.95}
+.card{background:var(--card);border-radius:28px;padding:22px;margin-top:-40px;box-shadow:0 10px 30px rgba(20,60,100,.15);text-align:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font:800 22px system-ui,sans-serif;border:0;border-radius:999px;padding:18px 34px;min-height:64px;color:#fff;background:linear-gradient(180deg,var(--pri),var(--pri2));box-shadow:0 6px 0 #1e8f3a;text-decoration:none;cursor:pointer;width:100%;max-width:420px}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1e8f3a}
+.btn.sec{background:linear-gradient(180deg,#5fd0ff,var(--blue));box-shadow:0 6px 0 #1f7fc4;font-size:19px;min-height:54px;padding:12px 26px}
+.note{color:var(--muted);font-size:15px;margin:10px 0 0}
+.steps{display:grid;gap:12px;margin:18px 0 0;padding:0;list-style:none;text-align:left}
+.steps li{display:flex;gap:14px;align-items:center;background:var(--bg);border-radius:18px;padding:12px 14px}
+.steps .n{flex:0 0 40px;height:40px;border-radius:50%;background:var(--pink);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:20px}
+.k{display:inline-block;border:2px solid var(--line);background:var(--card);border-radius:10px;padding:0 8px;font-weight:700;white-space:nowrap}
+h2{font-size:24px;margin:34px 0 12px}
+.shots{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}
+.shots img{height:200px;border-radius:18px;scroll-snap-align:start;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.feat div{background:var(--card);border-radius:20px;padding:14px 16px}
+.feat b{display:block;font-size:18px}
+details{background:var(--card);border-radius:20px;padding:14px 18px;margin-top:12px}
+summary{font-weight:700;cursor:pointer}
+.qr{display:none;margin:18px auto 0;width:180px;background:#fff;border-radius:16px;padding:10px}
+.desk .qr{display:block}
+.stores{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.stores span{border:2px dashed var(--line);border-radius:14px;padding:8px 14px;color:var(--muted);font-weight:700}
+footer{text-align:center;color:var(--muted);font-size:14px;margin-top:40px}
+footer a{color:inherit}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <img class="ico" src="ikony/icon-512.png" alt="">
+  <h1>Zoubky</h1>
+  <p>Naučná hra pro děti od 3 let. Vyčisti zoubky bobrovi, kočičce, Karkulce i dráčkovi – a nauč se, že zuby se čistí ráno a večer.</p>
+</header>
+<div class="wrap">
+  <div class="card" id="install">
+    <!-- Android / počítač s Chrome: instalace jedním ťuknutím -->
+    <div id="a-prompt" class="hide">
+      <button class="btn" id="btnInstall">⬇️ Nainstalovat Zoubky</button>
+      <p class="note">Nainstaluje se jako aplikace na plochu. Bez varování, bez reklam, funguje i bez internetu.</p>
+    </div>
+    <div id="a-done" class="hide"><p style="font-size:22px;font-weight:800;margin:6px 0">✅ Hotovo! Zoubky najdeš na ploše telefonu.</p><a class="btn sec" href="hra/">Hrát hned</a></div>
+    <!-- iPhone / iPad -->
+    <div id="i-steps" class="hide">
+      <a class="btn" href="hra/">▶️ Otevřít hru</a>
+      <p class="note">Aby se hra uložila na plochu iPhonu jako aplikace:</p>
+      <ol class="steps">
+        <li><span class="n">1</span><span>Otevři tuhle stránku v <b>Safari</b>.</span></li>
+        <li><span class="n">2</span><span>Dole ťukni na <span class="k">Sdílet ⬆︎</span> (čtvereček se šipkou nahoru).</span></li>
+        <li><span class="n">3</span><span>Vyber <span class="k">Přidat na plochu</span> a potvrď <span class="k">Přidat</span>.</span></li>
+      </ol>
+    </div>
+    <!-- Android bez nabídky instalace (např. Samsung Internet) -->
+    <div id="a-manual" class="hide">
+      <a class="btn" href="hra/">▶️ Otevřít hru</a>
+      <ol class="steps">
+        <li><span class="n">1</span><span>Otevři stránku v prohlížeči <b>Chrome</b> – objeví se tlačítko <b>Nainstalovat</b>.</span></li>
+        <li><span class="n">2</span><span>Nebo v menu <span class="k">⋮</span> vyber <span class="k">Přidat na plochu</span> / <span class="k">Instalovat aplikaci</span>.</span></li>
+      </ol>
+    </div>
+    <div id="d-play" class="hide">
+      <a class="btn" href="hra/">▶️ Hrát v prohlížeči</a>
+      <p class="note">Na telefonu naskenuj kód a hru si nainstaluj:</p>
+      <img class="qr" src="qr.svg" alt="QR kód odkazu na tuto stránku">
+    </div>
+    <div class="stores"><span>Google Play – připravujeme</span><span>App Store – připravujeme</span></div>
+  </div>
+
+  <h2>Jak to vypadá</h2>
+  <div class="shots">
+    <img src="obrazky/ukazka-1.png" alt="Mapa Zoubkové země"><img src="obrazky/ukazka-2.png" alt="Odšroubování pasty"><img src="obrazky/ukazka-3.png" alt="Čištění zubů"><img src="obrazky/ukazka-4.png" alt="Knížka nálepek"><img src="obrazky/ukazka-5.png" alt="Odměna">
+  </div>
+
+  <h2>Co ve hře najdeš</h2>
+  <div class="feat">
+    <div><b>🗺️ Zoubková země</b>20 kamarádů od bobra po dráčka, každý se svým příběhem.</div>
+    <div><b>🪥 Pasta a kartáček</b>Odšroubuj víčko, vymačkej pastu, vyber si kartáček.</div>
+    <div><b>🦠 Bacilové</b>Utíkají, skáčou na nos a schovávají se mezi zuby.</div>
+    <div><b>⏱️ Až 3 minuty</b>Čištění se postupně prodlužuje na doporučenou dobu.</div>
+    <div><b>⭐ Knížka nálepek</b>Odlepit, nalepit, pořádně přitlačit.</div>
+    <div><b>👨‍👩‍👧 Čistíme spolu</b>30 s až 3 minuty skutečného čištění s dítětem.</div>
+  </div>
+
+  <details id="apk">
+    <summary>Instalace z APK souboru (Android, pro pokročilé)</summary>
+    <p>Pokud chceš verzi s hlasem a vibracemi jako samostatný soubor:</p>
+    <a class="btn sec" href="https://github.com/jirgalpeter-netizen/zoubky/releases/latest/download/Zoubky.apk">Stáhnout Zoubky.apk</a>
+    <ol class="steps">
+      <li><span class="n">1</span><span>Prohlížeč se zeptá, jestli soubor stáhnout – zvol <span class="k">Přesto stáhnout</span>.</span></li>
+      <li><span class="n">2</span><span>Otevři stažený soubor. Když telefon napíše, že instalaci z tohoto zdroje nepovoluje, ťukni na <span class="k">Nastavení</span> a zapni <span class="k">Povolit z tohoto zdroje</span>.</span></li>
+      <li><span class="n">3</span><span>Když se ozve Play Protect, ťukni na <span class="k">Další podrobnosti</span> → <span class="k">Přesto nainstalovat</span>.</span></li>
+      <li><span class="n">4</span><span>Samsung s <b>Automatickým blokátorem</b> instalaci zastaví úplně: <span class="k">Nastavení → Zabezpečení a soukromí → Automatický blokátor</span> → vypnout, nainstalovat a zase zapnout.</span></li>
+    </ol>
+    <p class="note">Jednodušší je tlačítko <b>Nainstalovat</b> nahoře – to žádná varování nemá.</p>
+  </details>
+
+  <footer>Bez reklam · bez nákupů · nesbírá žádná data<br><a href="soukromi.html">Zásady ochrany soukromí</a> · <a href="https://github.com/jirgalpeter-netizen/zoubky">Zdrojový kód</a></footer>
+</div>
+<script>
+(function(){
+  var ua=navigator.userAgent, ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1), android=/Android/.test(ua);
+  var standalone=window.navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+  var $=function(id){return document.getElementById(id)}, deferred=null;
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  function show(id){['a-prompt','a-done','i-steps','a-manual','d-play'].forEach(function(x){$(x).classList.toggle('hide',x!==id)})}
+  if(standalone){location.replace('hra/');return}
+  if(ios) show('i-steps'); else if(android) show('a-manual'); else {show('d-play');document.body.classList.add('desk')}
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;show('a-prompt')});
+  window.addEventListener('appinstalled',function(){show('a-done')});
+  $('btnInstall').onclick=function(){if(!deferred)return;deferred.prompt();deferred.userChoice.then(function(r){if(r.outcome==='accepted')show('a-done');deferred=null})};
+  if(location.hash==='#apk')$('apk').open=true;
+})();
+</script>
+</body>
+</html>

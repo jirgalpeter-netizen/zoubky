@@ -1,0 +1,6 @@
+{ "name": "Zoubky – čištění zubů", "short_name": "Zoubky", "lang": "cs", "start_url": "./hra/", "scope": "./",
+  "display": "fullscreen", "orientation": "landscape", "background_color": "#7fd3ff", "theme_color": "#3fa9f5",
+  "description": "Naučná hra pro děti od 3 let o čištění zubů.",
+  "icons": [ { "src": "ikony/icon-192.png", "sizes": "192x192", "type": "image/png" },
+             { "src": "ikony/icon-512.png", "sizes": "512x512", "type": "image/png" },
+             { "src": "ikony/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" } ] }

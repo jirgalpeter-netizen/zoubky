@@ -1,0 +1,52 @@
+name: iOS
+on:
+  push:
+    branches: [main]
+    paths: ['assets/**', 'ios/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Nahrát do TestFlight / App Store Connect'
+        type: boolean
+        default: false
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Připravit projekt
+        run: |
+          brew install xcodegen
+          rm -rf ios/www && cp -R assets ios/www
+          cd ios && xcodegen generate
+      - name: Sestavit pro simulátor (kontrola, že se aplikace přeloží)
+        run: |
+          cd ios
+          xcodebuild -project Zoubky.xcodeproj -scheme Zoubky -configuration Release \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -25
+      - name: Archiv a nahrání do App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KEY=$HOME/AuthKey_${ASC_KEY_ID}.p8; printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $KEY -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          cd ios
+          xcodebuild -project Zoubky.xcodeproj -scheme Zoubky -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/Zoubky.xcarchive archive DEVELOPMENT_TEAM=$APPLE_TEAM_ID CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=$((GITHUB_RUN_NUMBER + 100)) $AUTH | tail -25
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/Zoubky.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export $AUTH | tail -25
+          rm -f "$KEY"
